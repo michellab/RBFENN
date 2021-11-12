@@ -1,0 +1,12 @@
+#include "amber99sb-star-ildn-mut.ff/forcefield.itp"
+#include "topol_Protein.itp"
+#include "topol_Protein2.itp"
+#include "amber99sb-star-ildn-mut.ff/tip3p.itp"
+#include "amber99sb-star-ildn-mut.ff/ions.itp"
+
+[ system ]
+simulation system
+
+[ molecules ]
+Protein 1
+Protein2 1

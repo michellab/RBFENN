@@ -1,0 +1,9 @@
+./ANALYSIS/perturbation_networks/process/inputs/rel_esol_fepspace_train.csv
+./tests_old/JNK1.tar.gz
+./tests_old/SETUP_BENZENE_TRAINSET.ipynb
+./tests_old/.ipynb_checkpoints/SETUP_BENZENE_TRAINSET-checkpoint.ipynb
+./SETUP_BENZENE_TRAINSET.ipynb
+./.ipynb_checkpoints/SETUP_BENZENE_TRAINSET-checkpoint.ipynb
+./fep_ref_ligands/cresset_benchmarks/source/
+nohup.out
+lambda_*
