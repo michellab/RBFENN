@@ -482,7 +482,7 @@ def getMapping(ligA, ligB, ori_mcs, abstract_mol_1, abstract_mol_2):
 
     In its current form this step is prohibitively rate-limiting. For a usable implementation
     this will need to be refactored to not require parameterisation for both the input 
-    and fep-space ligands.
+    and fep-space ligands. see https://github.com/michellab/BioSimSpace/issues/249.
     """
 
     # get the atom type changes for the original perturbation (i.e. input ligand).
