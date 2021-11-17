@@ -23,7 +23,7 @@ import matplotlib.image as mpimg
 import re
 
 import time
-
+from collections import deque
 import subprocess
 import sys
 import os
@@ -381,53 +381,156 @@ def predictEnsemble(ensemble, test_dataset):
     # return the mean and std for each perturbation.
     return np.mean(preds, axis=0), np.std(preds, axis=0)
 
-def getNonMCSMapping(lig_mol, mcs_object):
+def RDKitToBSSMol(mol):
+    """Uses a .pdb intermediate to convert an rdkit molecule object to a BSS mol object.
     """
-    Given an input ligand and its MCS with another ligand, return atom indices of Non-MCS atoms.
+    #mol = Chem.AddHs(mol) 
+    AllChem.EmbedMolecule(mol) # need 3D coordinates for BSS to align molecules better.
+    Chem.MolToPDBFile(mol, "tmp_mol.pdb")
+    bss_mol = BSS.IO.readPDB("tmp_mol.pdb")[0]
+    os.remove("tmp_mol.pdb")  
+    return bss_mol  
+
+
+def parameteriseLigand(input_ligand):
+    """Parameterise an input BSS ligand structure with GAFF2 from SMILES input. returns the parameterised ligand
+    and the used SMILES."""
+    if os.path.exists("tmp_setup"):
+        shutil.rmtree("tmp_setup")
+    
+    try:
+        input_ligand_p = BSS.Parameters.parameterise(input_ligand, forcefield="GAFF2").getMolecule()
+    
+    except BSS._Exceptions.ParameterisationError:
+        # introduce stereochemistry, see https://github.com/openforcefield/openff-toolkit/issues/146
+        try:
+            input_ligand_p = BSS.Parameters.parameterise(input_ligand.replace("[C]", "[C@H]"), forcefield="GAFF2").getMolecule()
+    
+        except BSS._Exceptions.ParameterisationError:
+            # if it fails again, OFF might be struggling with the input SMILES. For these edge-cases 
+            # sometimes it helps shuffling the order of SMILES. Try a few times.
+            for attempt in range(5):
+                try:
+                    # use rdkit to write alternative SMILES.
+                    tmpmol = Chem.MolFromSmiles(input_ligand)
+                    newsmiles = Chem.MolToSmiles(tmpmol, doRandom=True)
+                    print("Retrying with SMILES shuffle:", newsmiles)
+                    input_ligand_p = BSS.Parameters.parameterise(newsmiles, forcefield="GAFF2").getMolecule()
+                    print("Success!")
+                    # return the new smiles as well. 
+                    input_ligand = newsmiles
+                    break
+                    
+                except BSS._Exceptions.ParameterisationError:
+                    input_ligand_p = None 
+
+        
+    if input_ligand_p == None:
+        print("Bad input, returning None:", input_ligand)
+        
+    return input_ligand_p, input_ligand
+
+
+def mapAtoms(mol1, mol2, forced_mcs_mapp=False):
     """
-    # get the fragments by subtracting MCS from ligand.
-    lig_fragments = Chem.ReplaceCore(lig_mol, Chem.MolFromSmarts(mcs_object.smartsString))
-       
-    # get the atom indices for the MCS object.
-    mcs_indices = lig_mol.GetSubstructMatch(Chem.MolFromSmarts(mcs_object.smartsString))
+    Aligns and merges two BSS molecules; returns the atom mapping, merged molecule and a nested
+    list describing the atom type changes.
+    """
+    if forced_mcs_mapp:
+        mapp = BSS.Align.matchAtoms(mol1, mol2, prematch=forced_mcs_mapp)
+    else:
+        mapp = BSS.Align.matchAtoms(mol1, mol2)
 
-    # get all the indices for the ligand.
-    ligand_indices = set([x for x in range(0, lig_mol.GetNumAtoms())])
+    try:
+        merged = BSS.Align.merge(mol1, mol2, mapp,
+                                allow_ring_breaking=True,
+                                allow_ring_size_change=True,
+                                )
+    except BSS._Exceptions.IncompatibleError:
+        # this mapping creates a very funky perturbation; discard.
+        return {}, None, [[]]
 
-    # get all the fragment indices.
-    non_mcs_indices = set(ligand_indices) - set(mcs_indices)
+    # Get indices of perturbed atoms.
+    idxs = merged._getPerturbationIndices()
 
-    return list(non_mcs_indices) 
+    # For each atom in the merged molecule, get the lambda 0 and 1 amber atom type.
+    atom_type_changes = [[merged.getAtoms()[idx]._sire_object.property("ambertype0"),  \
+                 merged.getAtoms()[idx]._sire_object.property("ambertype1")] \
+                 for idx in idxs]
 
+    # Keep only changing atoms.
+    atom_type_changes = [at_ch for at_ch in atom_type_changes if at_ch[0] != at_ch[1] ]
 
+    return mapp, merged, atom_type_changes
+
+def getBenzeneScaffoldIndices(molecule):
+    """For a given RDKit molecule, return the atom indices for a benzene scaffold"""
+    patt = Chem.MolFromSmiles('c1ccccc1')
+    hit_ats = list(molecule.GetSubstructMatch(patt))
+    return hit_ats, Chem.AddHs(molecule)
+
+def rotate_values(my_dict):
+    values_deque = deque(my_dict.values())
+    values_deque.rotate(1)
+    return dict(zip(my_dict.keys(), values_deque))
 
 def getMapping(ligA, ligB, ori_mcs, abstract_mol_1, abstract_mol_2):
     """
-    Given input original ligands A and B, their MCSresult and the generated FEP-Space derivatives 1/2,
+    Given input (parameterised) original ligands A and B, their MCSresult and 
+    the generated FEP-Space derivatives 1/2 in RDKit molecule object format,
     find the FEP-Space derivative atom-mapping that matches the original ligands' MCS.
+
+    In its current form this step is prohibitively rate-limiting. For a usable implementation
+    this will need to be refactored to not require parameterisation for both the input 
+    and fep-space ligands.
     """
-    bss_mols = []
-    # convert RDKit molecules to BSS molecules using a tmp pdb intemediate.
-    for mol in abstract_mol_1, abstract_mol_2:
-        #mol = Chem.AddHs(mol) # if uncomment then BSS will include hydrogens in the MCS 
-        #computation, slowing down the process considerably.
-        AllChem.EmbedMolecule(mol) # need 3D coordinates for BSS to align molecules better.
-        Chem.MolToPDBFile(mol, "tmp_mol.pdb")
-        bss_mols.append(BSS.IO.readPDB("tmp_mol.pdb")[0])
-        os.remove("tmp_mol.pdb")
+
+    # get the atom type changes for the original perturbation (i.e. input ligand).
+    _, _, ori_atom_type_changes = mapAtoms(ligA, ligB)
 
 
-    abstract_mapping = BSS.Align.matchAtoms(bss_mols[0], bss_mols[1], matches=1)
-    """
-    note: the found mapping here does not necessarily correspond to the original ligands' mappings.
-    Instead, BSS finds the optimal mapping between the derivatives, which will be the same as the 
-    originals' perturbation in 99% of cases. A more empirical approach would be to 
-    1) generate the top n mappings between the derivatives
-    2) find the top mapping between the original ligands
-    3) by R-group analysis, find the correct mapping generated in 1).
-    4) return the matched mapping.
-    """
-    return abstract_mapping
+    abs_lig_1, _ = parameteriseLigand(Chem.MolToSmiles(abstract_mol_1))
+    abs_lig_2, _ = parameteriseLigand(Chem.MolToSmiles(abstract_mol_2))
+
+    if not abs_lig_1 or not abs_lig_2:
+        # ligands are not parameterisable due to SMILES inconsistencies. Will be discarded downstream.
+        return {0:0, 1:1, 2:2, 3:3, 4:4, 5:5}
+
+    # use RDKit to find the benzene atom indices. These are conserved between RDKit and BSS.
+    lig_1_benzene_indices, lig_1_rdkit = getBenzeneScaffoldIndices(abstract_mol_1)
+    lig_2_benzene_indices, lig_2_rdkit = getBenzeneScaffoldIndices(abstract_mol_2)
+
+
+    # with these benzene indices make an initial forced mapping. 
+    forced_mapping = {}
+    for at1, at2 in zip(lig_1_benzene_indices, lig_2_benzene_indices):
+        forced_mapping[at1] = at2
+
+    # now find the correct mapping for the FEP-Space derivatives.
+    correct_mapping = None
+    mapping_highscore = -1
+
+    for rotat in range(6):
+        # rotate along the benzene MCS. 
+        forced_mapping = rotate_values(forced_mapping)
+
+        # use BSS to map the ligands together using the forced mapping.
+        mapping, _, abs_atom_type_changes = mapAtoms(abs_lig_1, abs_lig_2, forced_mcs_mapp=forced_mapping)
+
+        # compare the original and the current abstract atom type change lists.
+        # the mapping with the highest number of matches will be the correct mapping.
+        counter = 0
+        for at_ch in abs_atom_type_changes:
+            if at_ch in ori_atom_type_changes:
+                counter += 1
+
+        # set the new mapping as the correct mapping if it outperforms previous ones.
+        if counter > mapping_highscore:
+            correct_mapping = mapping
+            mapping_highscore = counter
+
+    return correct_mapping
+
 
 def calcFPSimilarity(lig1, lig2):
     """computes molecular similarity using RDKit's standard approach"""
@@ -440,11 +543,14 @@ def calcFPSimilarity(lig1, lig2):
     return fp_simi
     
 
-def featurisePerturbations(perts):
-    """Loads ligands for a list of perturbations, 
+def featurisePerturbations(perts, param_dict):
+    """Loads ligands for a list of perturbations, uses a param_dict that is a {} that contains the 
+    parameterised (GAFF2) molecule object value for each input file key.
+
     returns data for each in shape [[lig_1, lig2], [],[]]"""
     pert_features, pert_names, pert_mappings, ha_change_counts, fp_simis = [], [], [], [], []
 
+    
     for pert in tqdm(perts, total=len(perts)):
       pert_name = pert[0].split("/")[-1].replace(".sdf", "")+"~"+pert[1].split("/")[-1].replace(".sdf", "")
 
@@ -494,24 +600,31 @@ def featurisePerturbations(perts):
           ha_change_count = str(ha_change_count)+"_fail"
 
       if not abstract_mol_1 or not abstract_mol_2:
-        continue
-      else:
+          # fails because of complex (or too many) fused ring jumps. handle as above.
+          abstract_mol_1 = abstract_mol_2 = Chem.MolFromSmiles("c1ccccc1")
+          ha_change_count = str(ha_change_count)+"_fail"
+
+
+      if not "_fail" in str(ha_change_count):
           # get the mapping for this perturbation.
           try:
-            mapping_array = getMapping(ligA, ligB, mcs, abstract_mol_1, abstract_mol_2)
+            mapping_array = getMapping(param_dict[pert[0]], param_dict[pert[1]], mcs, abstract_mol_1, abstract_mol_2)
 
           except BSS._Exceptions.AlignmentError:
             # in very rare cases BSS alignment fails for very large perturbations; for 
             # these cases return a standard mapping. 
             mapping_array = {0:0, 1:1, 2:2, 3:3, 4:4, 5:5}
+      else:
+        # failed featurisations we can just set to default mapping as well.
+        mapping_array = {0:0, 1:1, 2:2, 3:3, 4:4, 5:5}
 
-          # featurise the mapping.
-          pert_mappings.append(featuriseMapping(mapping_array))
+      # featurise the mapping.
+      pert_mappings.append(featuriseMapping(mapping_array))
 
-          # Get the SMILES for each FEP-Space derivative.
-          pert_features.append([Chem.MolToSmiles(abstract_mol_1), Chem.MolToSmiles(abstract_mol_2)])
-          pert_names.append(pert_name)
-          ha_change_counts.append(ha_change_count)
+      # Get the SMILES for each FEP-Space derivative.
+      pert_features.append([Chem.MolToSmiles(abstract_mol_1), Chem.MolToSmiles(abstract_mol_2)])
+      pert_names.append(pert_name)
+      ha_change_counts.append(ha_change_count)
 
     return pert_features, pert_names, pert_mappings, ha_change_counts, fp_simis   
 
@@ -572,7 +685,7 @@ if __name__ == "__main__":
       start = time.time()
 
       ligs = glob(f"{tgt}/*.sdf")
-      if len(ligs) > 2:
+      if len(ligs) >= 2:
           print("\n"+"$"*50)
           print(tgt)
           perts = list(itertools.combinations(ligs, 2))
@@ -580,6 +693,13 @@ if __name__ == "__main__":
         # don't work on this target if only two ligands are in the set.
         continue
 
+      # create a dictionary that contains all parameterised ligands.
+      print("Parameterising..")
+      param_dict = {}
+      for lig_path in tqdm(ligs, total=len(ligs)):
+        lig = BSS.IO.readMolecules(lig_path.replace(".sdf", ".mol2"))[0]
+        lig_p, _ = parameteriseLigand(lig)
+        param_dict[lig_path] = lig_p
 
       with open(f"output/series_predictions/{tgt.split('/')[-1]}.csv", "w") as preds_file:
           writer = csv.writer(preds_file)
@@ -589,7 +709,7 @@ if __name__ == "__main__":
           print("\nComputing features for all possible perturbations in the set (MCS + graphs).")
           
           perts_featurised, perts_names, pert_mappings, \
-                    ha_change_counts, fp_simis = featurisePerturbations(perts)
+                    ha_change_counts, fp_simis = featurisePerturbations(perts, param_dict)
 
           perts_dataset = createTestDataset(perts_featurised, pert_mappings)
             
@@ -603,13 +723,14 @@ if __name__ == "__main__":
           
           print(f"\nDone. Writing to output/series_predictions/{tgt.split('/')[-1]}.csv.")
           fail_counter = 0
+
           for pred_sem_mean, pred_sem_std, pert_name, ha_change_count, fp_simi in zip(
                                                 pred_sem_values_mean,
                                                 pred_sem_values_std,
                                                 perts_names,
                                                 ha_change_counts,
                                                 fp_simis):
-            
+
             # also make a random SEM prediction to use as negative control later on.
             random_sem_value = random.uniform(0, 1)
 
@@ -633,9 +754,13 @@ if __name__ == "__main__":
                               fp_simi
                               ])
           if fail_counter > 0:
-            print(f"{fail_counter} perturbations failed because of a change in formal charge. SEM_pred for these was set to {round(max(pred_sem_values_mean), 3)} kcal/mol.")
+            print(f"{fail_counter} perturbations failed because of complex fused rings or a change in formal charge. SEM_pred for these was set to {round(max(pred_sem_values_mean), 3)} kcal/mol.")
           end = time.time()
           walltime_storage.append([tgt, end-start])
+
+
+
+
 
     print("DONE.")
     with open("process/walltime_ml_pred_per_tgt.csv", "w") as writefile:
