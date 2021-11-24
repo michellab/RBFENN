@@ -450,16 +450,22 @@ def mapAtoms(mol1, mol2, forced_mcs_mapp=False):
         # this mapping creates a very funky perturbation; discard.
         return {}, None, [[]]
 
-    # Get indices of perturbed atoms.
+    # # Get indices of perturbed atoms.
     idxs = merged._getPerturbationIndices()
 
     # For each atom in the merged molecule, get the lambda 0 and 1 amber atom type.
     atom_type_changes = [[merged.getAtoms()[idx]._sire_object.property("ambertype0"),  \
                  merged.getAtoms()[idx]._sire_object.property("ambertype1")] \
                  for idx in idxs]
+    
 
     # Keep only changing atoms.
     atom_type_changes = [at_ch for at_ch in atom_type_changes if at_ch[0] != at_ch[1] ]
+    print("atom_type_changes", atom_type_changes)
+    atom_type_changes = []
+    for idx0, idx1 in mapp.items():
+        if mol1.getAtoms()[idx0].element() != mol2.getAtoms()[idx1].element():
+            atom_type_changes.append([mol1.getAtoms()[idx0].element(), mol2.getAtoms()[idx1].element()])
 
     return mapp, merged, atom_type_changes
 
@@ -484,7 +490,7 @@ def getMapping(ligA, ligB, ori_mcs, abstract_mol_1, abstract_mol_2):
     this will need to be refactored to not require parameterisation for both the input 
     and fep-space ligands. see https://github.com/michellab/BioSimSpace/issues/249.
     """
-
+    return {0:0, 1:1, 2:2, 3:3, 4:4, 5:5}
     # get the atom type changes for the original perturbation (i.e. input ligand).
     _, _, ori_atom_type_changes = mapAtoms(ligA, ligB)
 
@@ -523,6 +529,7 @@ def getMapping(ligA, ligB, ori_mcs, abstract_mol_1, abstract_mol_2):
         for at_ch in abs_atom_type_changes:
             if at_ch in ori_atom_type_changes:
                 counter += 1
+        print(counter, ori_atom_type_changes, abs_atom_type_changes)
 
         # set the new mapping as the correct mapping if it outperforms previous ones.
         if counter > mapping_highscore:
@@ -682,6 +689,11 @@ if __name__ == "__main__":
       if "bace" in tgt:
         # Exclude BACE as too many perturbations have double fused rings.
         continue
+
+      if not "tyk2" in tgt:
+        continue
+
+
       start = time.time()
 
       ligs = glob(f"{tgt}/*.sdf")
@@ -697,8 +709,8 @@ if __name__ == "__main__":
       print("Parameterising..")
       param_dict = {}
       for lig_path in tqdm(ligs, total=len(ligs)):
-        lig = BSS.IO.readMolecules(lig_path.replace(".sdf", ".mol2"))[0]
-        lig_p, _ = parameteriseLigand(lig)
+        lig_p = BSS.IO.readMolecules(lig_path.replace(".sdf", ".mol2"))[0]
+        #lig_p, _ = parameteriseLigand(lig)
         param_dict[lig_path] = lig_p
 
       with open(f"output/series_predictions/{tgt.split('/')[-1]}.csv", "w") as preds_file:
@@ -747,6 +759,15 @@ if __name__ == "__main__":
             # write results to file. These will be analysed in _04.
             writer.writerow([
                               pert_name,
+                              pred_sem_mean,
+                              pred_sem_std,
+                              random_sem_value,
+                              ha_change_count,
+                              fp_simi
+                              ])
+            # also write the inverse perturbation.
+            writer.writerow([
+                              f"{pert_name.split('~')[1]}~{pert_name.split('~')[0]}",
                               pred_sem_mean,
                               pred_sem_std,
                               random_sem_value,
