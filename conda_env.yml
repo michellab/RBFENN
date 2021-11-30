@@ -1,8 +1,7 @@
 name: data_driven_fep_rel
 channels:
-  - michellab/label/dev
   - omnia
-  - <unknown>
+  - michellab/label/dev
   - conda-forge
   - defaults
 dependencies:
@@ -18,7 +17,7 @@ dependencies:
   - backports=1.0=py_2
   - backports.functools_lru_cache=1.6.4=pyhd8ed1ab_0
   - biopython=1.79=py37h5e8e339_0
-  - biosimspace=2020.1.0=py37h1de35cc_650
+  - biosimspace=2020.1.0=py37h9bf148f_658
   - bleach=4.1.0=pyhd8ed1ab_0
   - blosc=1.21.0=h9c3ff4c_0
   - boost=1.72.0=py37h48f8a5e_1
@@ -247,7 +246,6 @@ dependencies:
     - cachetools==4.2.4
     - clang==5.0
     - flatbuffers==1.12
-    - freenrgworkflows==1.2.0
     - gast==0.4.0
     - google-auth==2.3.2
     - google-auth-oauthlib==0.4.6
