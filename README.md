@@ -6,4 +6,4 @@ Source code to reproduce this work. Given all publicly available FEP benchmarkin
 
 To reproduce, install the provided conda environment on a linux machine with at least one GPU (cuda). Main dependencies:
 - [BioSimSpace](https://github.com/michellab/BioSimSpace)
-- [TensorFlow-gpu > 2.6.0](https://pypi.org/project/tensorflow-gpu/)
+- [TensorFlow-gpu >= 2.6.0](https://pypi.org/project/tensorflow-gpu/)
