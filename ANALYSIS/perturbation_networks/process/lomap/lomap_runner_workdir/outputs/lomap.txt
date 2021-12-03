@@ -1,0 +1,17 @@
+#ID	FileName
+0	000_lig_ejm_44.sdf
+1	001_lig_ejm_49.sdf
+2	002_lig_ejm_55.sdf
+3	003_lig_jmc_28.sdf
+4	004_lig_ejm_43.sdf
+5	005_lig_ejm_50.sdf
+6	006_lig_ejm_46.sdf
+7	007_lig_ejm_54.sdf
+8	008_lig_ejm_45.sdf
+9	009_lig_ejm_47.sdf
+10	010_lig_ejm_31.sdf
+11	011_lig_jmc_30.sdf
+12	012_lig_jmc_27.sdf
+13	013_lig_ejm_48.sdf
+14	014_lig_ejm_42.sdf
+15	015_lig_jmc_23.sdf

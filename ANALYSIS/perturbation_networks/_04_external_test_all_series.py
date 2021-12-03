@@ -36,7 +36,7 @@ import itertools
 import random
 # import code to regenerate the twin GCN.
 from _01_twin_gcn import *
-from _02_transfer_learn_sem import modelTransfer
+from _02_transfer_learn_sem import *
 
 
 def CountHAChange(fragment1_mol, fragment2_mol):
@@ -399,12 +399,12 @@ def parameteriseLigand(input_ligand):
         shutil.rmtree("tmp_setup")
     
     try:
-        input_ligand_p = BSS.Parameters.parameterise(input_ligand, forcefield="GAFF2").getMolecule()
+        input_ligand_p = BSS.Parameters.gaff2(input_ligand, charge_method="GAS").getMolecule()
     
     except BSS._Exceptions.ParameterisationError:
         # introduce stereochemistry, see https://github.com/openforcefield/openff-toolkit/issues/146
         try:
-            input_ligand_p = BSS.Parameters.parameterise(input_ligand.replace("[C]", "[C@H]"), forcefield="GAFF2").getMolecule()
+            input_ligand_p = BSS.Parameters.gaff2(input_ligand.replace("[C]", "[C@H]"), charge_method="GAS").getMolecule()
     
         except BSS._Exceptions.ParameterisationError:
             # if it fails again, OFF might be struggling with the input SMILES. For these edge-cases 
@@ -415,7 +415,7 @@ def parameteriseLigand(input_ligand):
                     tmpmol = Chem.MolFromSmiles(input_ligand)
                     newsmiles = Chem.MolToSmiles(tmpmol, doRandom=True)
                     print("Retrying with SMILES shuffle:", newsmiles)
-                    input_ligand_p = BSS.Parameters.parameterise(newsmiles, forcefield="GAFF2").getMolecule()
+                    input_ligand_p = BSS.Parameters.gaff2(newsmiles, charge_method="GAS").getMolecule()
                     print("Success!")
                     # return the new smiles as well. 
                     input_ligand = newsmiles
@@ -447,8 +447,15 @@ def mapAtoms(mol1, mol2, forced_mcs_mapp=False):
                                 allow_ring_size_change=True,
                                 )
     except BSS._Exceptions.IncompatibleError:
-        # this mapping creates a very funky perturbation; discard.
-        return {}, None, [[]]
+        try:
+            merged = BSS.Align.merge(mol1, mol2, mapp,
+                                allow_ring_breaking=True,
+                                allow_ring_size_change=True,
+                                force=True
+                                )
+        except BSS._Exceptions.IncompatibleError:      
+            # this mapping creates a very funky perturbation; discard.
+            return {}, None, [[]]
 
     # # Get indices of perturbed atoms.
     idxs = merged._getPerturbationIndices()
@@ -457,15 +464,9 @@ def mapAtoms(mol1, mol2, forced_mcs_mapp=False):
     atom_type_changes = [[merged.getAtoms()[idx]._sire_object.property("ambertype0"),  \
                  merged.getAtoms()[idx]._sire_object.property("ambertype1")] \
                  for idx in idxs]
-    
 
     # Keep only changing atoms.
     atom_type_changes = [at_ch for at_ch in atom_type_changes if at_ch[0] != at_ch[1] ]
-    print("atom_type_changes", atom_type_changes)
-    atom_type_changes = []
-    for idx0, idx1 in mapp.items():
-        if mol1.getAtoms()[idx0].element() != mol2.getAtoms()[idx1].element():
-            atom_type_changes.append([mol1.getAtoms()[idx0].element(), mol2.getAtoms()[idx1].element()])
 
     return mapp, merged, atom_type_changes
 
@@ -486,11 +487,17 @@ def getMapping(ligA, ligB, ori_mcs, abstract_mol_1, abstract_mol_2):
     the generated FEP-Space derivatives 1/2 in RDKit molecule object format,
     find the FEP-Space derivative atom-mapping that matches the original ligands' MCS.
 
-    In its current form this step is prohibitively rate-limiting. For a usable implementation
-    this will need to be refactored to not require parameterisation for both the input 
-    and fep-space ligands. see https://github.com/michellab/BioSimSpace/issues/249.
+    In its current form this step is prohibitively rate-limiting. Even with gasteiger-charge based
+    parameterisation this protocol requires further speed-up. See https://github.com/michellab/BioSimSpace/issues/249.
+    Potentially this could be solved by refactoring FEP-Space training set setup:
+    - robustly graft R-groups onto benzene such that we keep track of the R-group indices that are perturbed
+    - insert a reference R-group at e.g. idx 5 (e.g. -cc(At)c-)
+    - featurise with standard mapping {0:0, 1:1, ..}
+    - remove reference R-group
+
+    alternatively, instead of feeding a mapping array into the NN, the amber atom-type changes 
+    could be featurised directly through e.g. one-hot encoding.
     """
-    return {0:0, 1:1, 2:2, 3:3, 4:4, 5:5}
     # get the atom type changes for the original perturbation (i.e. input ligand).
     _, _, ori_atom_type_changes = mapAtoms(ligA, ligB)
 
@@ -529,7 +536,6 @@ def getMapping(ligA, ligB, ori_mcs, abstract_mol_1, abstract_mol_2):
         for at_ch in abs_atom_type_changes:
             if at_ch in ori_atom_type_changes:
                 counter += 1
-        print(counter, ori_atom_type_changes, abs_atom_type_changes)
 
         # set the new mapping as the correct mapping if it outperforms previous ones.
         if counter > mapping_highscore:
@@ -656,11 +662,158 @@ def createTestDataset(perts_featurised, pert_mappings):
 
     return series_dataset
 
+def loadPostProcessors(basepath_to_input):
+    """
+    Loads statistical summaries to postprocess features for test datapoints. Any test feature array
+    must be normalized/PCAd in the same way that the training data was in order for predictions to 
+    be sensible.
+    """
+    apfp_stats = pd.read_csv(basepath_to_input+"stats_apfp.csv")
+    ecfp_stats = pd.read_csv(basepath_to_input+"stats_ecfp.csv")
+    props_stats = pd.read_csv(basepath_to_input+"stats_props.csv")
+
+    apfp_pca_obj = pickle.load(open(basepath_to_input+"pca_apfp.pkl","rb"))
+    ecfp_pca_obj = pickle.load(open(basepath_to_input+"pca_ecfp.pkl","rb"))
+    props_pca_obj = pickle.load(open(basepath_to_input+"pca_props.pkl","rb"))
+
+    rf_apfp = pickle.load(open(basepath_to_input+"fit_rf_apfp.pkl","rb")) 
+    rf_ecfp = pickle.load(open(basepath_to_input+"fit_rf_ecfp.pkl","rb")) 
+    rf_props = pickle.load(open(basepath_to_input+"fit_rf_props.pkl","rb")) 
+
+    svr_apfp = pickle.load(open(basepath_to_input+"fit_svr_apfp.pkl","rb")) 
+    svr_ecfp = pickle.load(open(basepath_to_input+"fit_svr_ecfp.pkl","rb")) 
+    svr_props = pickle.load(open(basepath_to_input+"fit_svr_props.pkl","rb"))
+
+    # return a dict to simplify parsing this function's output.
+    return_dict = {
+                "apfp_stats" : apfp_stats,
+                "ecfp_stats" : ecfp_stats,
+                "props_stats" : props_stats,
+                "apfp_pca_obj" : apfp_pca_obj,
+                "ecfp_pca_obj" : ecfp_pca_obj,
+                "props_pca_obj" : props_pca_obj,
+                "rf_apfp" : rf_apfp,
+                "rf_ecfp" : rf_ecfp,
+                "rf_props" : rf_props,
+                "svr_apfp" : svr_apfp,
+                "svr_ecfp" : svr_ecfp,
+                "svr_props" : svr_props
+                }
+    return return_dict
+
+def normaliseTestFeats(feats, stat):
+    """Given an array of features,
+    Returns a normalised DataFrame and stats for test set scaling."""
+
+    feats_df = pd.DataFrame.from_records(feats)
+
+    def norm(x):
+        return (x - stat['mean']) / stat['std']
+
+    # Normalise and return separately.
+    normed_data = norm(feats_df).fillna(0).replace([np.inf, -np.inf], 0.0)
+    
+    return normed_data 
+
+def reduceTestFeatures(feats, pca):
+    """Given a pd dataframe of normalised features, reduce
+    to 100 dimensions using the provided PCA object that has been
+    pre-fit."""
+    return pca.transform(feats)
+
+def predictWithModel(feats, model1, model2):
+    """Given an array of pre-processed features, predict the y label using the
+    provided pre-trained models"""
+    return model1.predict(feats)[0], model2.predict(feats)[0]
+
+def predictBaseModels(perts):
+    """
+    Given a list of perturbations where each item in each list is a path to an SDF file,
+    - load both ligands as rdkit mol objects
+    - featurise as during training
+    - predict the SEM using each method & return arrays
+    """
+    print("Predicting using base models..")
+    calc = Calculator(descriptors, ignore_3D=True)
+
+    # load all statistics and PCA objects required for pre-processing the fingerprints.
+    pp_dict = loadPostProcessors("process/base_models/")
+
+    apfp_rf_preds, apfp_svr_preds,  ecfp_rf_preds, ecfp_svr_preds, \
+    props_rf_preds, props_svr_preds = [], [], [], [], [], []
+
+    for liga, ligb in tqdm(perts):
+        liga = Chem.SDMolSupplier(liga)[0]
+        ligb = Chem.SDMolSupplier(ligb)[0]
+
+        ####### ATOM-PAIR FPs
+        apfp = list(rdMolDescriptors.GetHashedAtomPairFingerprint(liga, 256))
+        for bit in list(rdMolDescriptors.GetHashedAtomPairFingerprint(ligb, 256)):
+            apfp.append(bit)
+        apfp_normed = normaliseTestFeats([apfp], pp_dict["apfp_stats"])
+        apfp_postprocessed = reduceTestFeatures(apfp_normed, pp_dict["apfp_pca_obj"])
+        rf_pred, svr_pred = predictWithModel(apfp_postprocessed, 
+                        pp_dict["rf_apfp"], pp_dict["svr_apfp"])
+        apfp_rf_preds.append(rf_pred)
+        apfp_svr_preds.append(svr_pred)
+
+
+        ####### EXTENDED CONNECTIVITY FPs
+        ecfp = list(AllChem.GetMorganFingerprintAsBitVect(liga,1,nBits=1024))
+        for bit in list(AllChem.GetMorganFingerprintAsBitVect(ligb,1,nBits=1024)):
+            ecfp.append(bit)
+        ecfp_normed = normaliseTestFeats([ecfp], pp_dict["ecfp_stats"])
+        ecfp_postprocessed = reduceTestFeatures(ecfp_normed, pp_dict["ecfp_pca_obj"])
+        rf_pred, svr_pred = predictWithModel(ecfp_postprocessed, 
+                        pp_dict["rf_ecfp"], pp_dict["svr_ecfp"])
+        ecfp_rf_preds.append(rf_pred)
+        ecfp_svr_preds.append(svr_pred)
+
+
+        ####### MOLECULAR PROPERTIES
+        liga_props = calc(liga).fill_missing(value=0)
+        ligb_props = calc(ligb).fill_missing(value=0)
+        dProps = np.array(list(ligb_props.values())) - np.array(list(liga_props.values()))
+        #dProps_col_names = ligb_props.keys()
+        props_normed = normaliseTestFeats([dProps], pp_dict["props_stats"])
+        props_postprocessed = reduceTestFeatures(props_normed, pp_dict["props_pca_obj"])
+        rf_pred, svr_pred = predictWithModel(props_postprocessed, 
+                        pp_dict["rf_props"], pp_dict["svr_props"])
+        props_rf_preds.append(rf_pred)
+        props_svr_preds.append(svr_pred)
+
+    return apfp_rf_preds, apfp_svr_preds,  ecfp_rf_preds, ecfp_svr_preds, props_rf_preds, props_svr_preds
+
+def writeBaselModelPreds(preds, pert_paths, output_pathbase):
+    """
+    writes a nested list of SEM predictions to files. See the return format in predictBaseModels().
+    """
+    print(f"Writing predictions to {output_pathbase}..")
+    pred_methods = ["apfp_rf_preds", "apfp_svr_preds",  
+                    "ecfp_rf_preds", "ecfp_svr_preds", 
+                    "props_rf_preds", "props_svr_preds"]
+    pert_names = [ pert[0].split("/")[-1].replace(".sdf","")+"~"+pert[1].split("/")[-1].replace(".sdf","") \
+                    for pert in pert_paths ]
+
+    for pred, method in zip(preds, pred_methods):
+
+        # write the predictions file for parsing during analysis.
+        with open(output_pathbase+"_"+method, "w") as writefile:
+            writer = csv.writer(writefile)
+            writer.writerow(["pert_name", "pred_sem_base"])
+
+            for pred_sem, pert_name in zip(pred, pert_names):
+                inv_pert_name = f"{pert_name.split('~')[1]}~{pert_name.split('~')[0]}"
+                writer.writerow([pert_name, pred_sem])
+                writer.writerow([inv_pert_name, pred_sem])
+
+
+
 
 if __name__ == "__main__":
-    ####################################################################
-    ####################################################################    
-    ## Load SEM predictor.
+    ###################################################################
+    ###################################################################    
+    # Load SEM predictor.
     # First, build the network architecture based on reference graph inputs from training.
     fepspace_df = pd.read_csv("process/fepspace_smiles_per_sem.csv", nrows=1)
     x_ref_0 = graphs_from_smiles(fepspace_df.ligand1_smiles)
@@ -680,7 +833,10 @@ if __name__ == "__main__":
     # now load in pre-trained weights.
     weights_path = "process/trained_model_weights/weights_finetuned"
     print(f"Loading model weights from {weights_path}_*..")
-    fepnn_ensemble = loadEnsemble(10, weights_path, fepnn) 
+    fepnn_ensemble = loadEnsemble(5, weights_path, fepnn) 
+
+
+
 
     # write files with SEM predictions per perturbation, per target in all available benchmarking series.
     walltime_storage = []
@@ -689,7 +845,6 @@ if __name__ == "__main__":
       if "bace" in tgt:
         # Exclude BACE as too many perturbations have double fused rings.
         continue
-
       if not "tyk2" in tgt:
         continue
 
@@ -705,12 +860,18 @@ if __name__ == "__main__":
         # don't work on this target if only two ligands are in the set.
         continue
 
+
+      # predict with base models (SVM, RF).
+      base_preds = predictBaseModels(perts)
+      writeBaselModelPreds(base_preds, perts, f"output/series_predictions/base_models/{tgt.split('/')[-1]}")
+      
+
       # create a dictionary that contains all parameterised ligands.
       print("Parameterising..")
       param_dict = {}
       for lig_path in tqdm(ligs, total=len(ligs)):
-        lig_p = BSS.IO.readMolecules(lig_path.replace(".sdf", ".mol2"))[0]
-        #lig_p, _ = parameteriseLigand(lig)
+        lig = BSS.IO.readMolecules(lig_path.replace(".sdf", ".mol2"))[0]
+        lig_p, _ = parameteriseLigand(lig)
         param_dict[lig_path] = lig_p
 
       with open(f"output/series_predictions/{tgt.split('/')[-1]}.csv", "w") as preds_file:
