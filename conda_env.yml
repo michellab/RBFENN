@@ -1,5 +1,6 @@
 name: data_driven_fep_rel
 channels:
+  - mordred-descriptor
   - omnia
   - michellab/label/dev
   - conda-forge
@@ -17,7 +18,7 @@ dependencies:
   - backports=1.0=py_2
   - backports.functools_lru_cache=1.6.4=pyhd8ed1ab_0
   - biopython=1.79=py37h5e8e339_0
-  - biosimspace=2020.1.0=py37h9bf148f_658
+  - biosimspace=2020.1.0=py37h9bf148f_672
   - bleach=4.1.0=pyhd8ed1ab_0
   - blosc=1.21.0=h9c3ff4c_0
   - boost=1.72.0=py37h48f8a5e_1
@@ -125,6 +126,7 @@ dependencies:
   - mistune=0.8.4=py37h5e8e339_1004
   - mmtf-python=1.1.2=py_0
   - mock=4.0.3=py37h89c1867_1
+  - mordred=1.2.0=pyhe5148d4_0
   - more-itertools=8.10.0=pyhd8ed1ab_0
   - msgpack-python=1.0.2=py37h2527ec5_1
   - nbclient=0.5.4=pyhd8ed1ab_0
