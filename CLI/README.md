@@ -4,9 +4,16 @@ Check `create_example` for inspiration on how to create parse files given a coll
 
 The reason the CLI was designed using this input parsing file is that it takes \~ 15 seconds to load the siamese GNN weights and create the model ensemble which would introduce too much overhead if it had to be loaded per ligand pair.
 
+
+
 - CLI -h
 - running example
 - checking output example
 - checking distribution plot
 
+
+
+
+
+Note: SF predicted is SEM, so the larger the predicted value the higher the predicted SF.
 
