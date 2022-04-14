@@ -1,2 +1,2 @@
-model_checkpoint_path: "weights_finetuned_4"
-all_model_checkpoint_paths: "weights_finetuned_4"
+model_checkpoint_path: "weights_finetuned_9_4"
+all_model_checkpoint_paths: "weights_finetuned_9_4"

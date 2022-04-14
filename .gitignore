@@ -9,3 +9,4 @@ rel_esol_fepspace_valid.csv
 ./fep_ref_ligands/cresset_benchmarks/source/
 nohup.out
 lambda_*
+ANALYSIS/perturbation_networks/process/inputs/rel_esol_fepspace_train.csv

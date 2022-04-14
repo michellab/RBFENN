@@ -1,7 +1,7 @@
 8f
- OpenBabel02152110423D
-Structure written by MMmdl.
- 49 52  0  0  1  0  0  0  0  0999 V2000
+ OpenBabel03212213163D
+
+ 49 52  0  0  0  0  0  0  0  0999 V2000
   -14.4976  -14.8078  -27.6041 C   0  0  0  0  0  0  0  0  0  0  0  0
   -15.0860  -15.6146  -26.6121 C   0  0  0  0  0  0  0  0  0  0  0  0
   -14.5776  -13.4189  -27.4910 C   0  0  0  0  0  0  0  0  0  0  0  0
@@ -110,5 +110,47 @@ M  END
 
 >  <IC50[nM]>
 2.2
+
+>  <Total Formal Charge>
+1
+
+>  <Favorite_cresset>
+false
+
+>  <MW_cresset>
+352.4
+
+>  <#Atoms_cresset>
+26
+
+>  <SlogP_cresset>
+4
+
+>  <TPSA_cresset>
+45.9
+
+>  <Flexibility_cresset>
+1.3
+
+>  <#RB_cresset>
+2
+
+>  <Rof5_cresset>
+0
+
+>  <Filename_cresset>
+ligands_tnks2.sdf
+
+>  <Tags_cresset>
+pos_charge
+
+>  <Confs_cresset>
+0
+
+>  <Poses_cresset>
+0
+
+>  <Activity (Primary)_cresset>
+No Primary Activity Set
 
 $$$$

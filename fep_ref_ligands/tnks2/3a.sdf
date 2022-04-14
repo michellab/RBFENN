@@ -1,7 +1,7 @@
 3a
- OpenBabel02152110423D
-Structure written by MMmdl.
- 39 41  0  0  1  0  0  0  0  0999 V2000
+ OpenBabel03212213163D
+
+ 39 41  0  0  0  0  0  0  0  0999 V2000
   -14.9816  -16.8848  -26.7516 N   0  0  0  0  0  0  0  0  0  0  0  0
   -15.4574  -17.7370  -25.9019 C   0  0  0  0  0  0  0  0  0  0  0  0
   -16.1716  -17.2489  -24.8288 N   0  0  0  0  0  0  0  0  0  0  0  0
@@ -88,5 +88,44 @@ M  END
 
 >  <IC50[nM]>
 8.7
+
+>  <Total Formal Charge>
+0.0
+
+>  <Favorite_cresset>
+false
+
+>  <MW_cresset>
+278.4
+
+>  <#Atoms_cresset>
+21
+
+>  <SlogP_cresset>
+3.8
+
+>  <TPSA_cresset>
+41.5
+
+>  <Flexibility_cresset>
+0.2
+
+>  <#RB_cresset>
+2
+
+>  <Rof5_cresset>
+0
+
+>  <Filename_cresset>
+ligands_tnks2.sdf
+
+>  <Confs_cresset>
+0
+
+>  <Poses_cresset>
+0
+
+>  <Activity (Primary)_cresset>
+No Primary Activity Set
 
 $$$$

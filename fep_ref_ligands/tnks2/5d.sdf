@@ -1,7 +1,7 @@
 5d
- OpenBabel02152110423D
-Structure written by MMmdl.
- 37 39  0  0  1  0  0  0  0  0999 V2000
+ OpenBabel03212213163D
+
+ 37 39  0  0  0  0  0  0  0  0999 V2000
   -14.3086  -14.7921  -27.4784 C   0  0  0  0  0  0  0  0  0  0  0  0
   -15.0167  -15.5896  -26.5804 C   0  0  0  0  0  0  0  0  0  0  0  0
   -14.4209  -13.4086  -27.3834 C   0  0  0  0  0  0  0  0  0  0  0  0
@@ -84,5 +84,44 @@ M  END
 
 >  <IC50[nM]>
 10.5
+
+>  <Total Formal Charge>
+0.0
+
+>  <Favorite_cresset>
+false
+
+>  <MW_cresset>
+298.3
+
+>  <#Atoms_cresset>
+22
+
+>  <SlogP_cresset>
+3.5
+
+>  <TPSA_cresset>
+61.7
+
+>  <Flexibility_cresset>
+2.2
+
+>  <#RB_cresset>
+3
+
+>  <Rof5_cresset>
+0
+
+>  <Filename_cresset>
+ligands_tnks2.sdf
+
+>  <Confs_cresset>
+0
+
+>  <Poses_cresset>
+0
+
+>  <Activity (Primary)_cresset>
+No Primary Activity Set
 
 $$$$

@@ -4,6 +4,7 @@
 
 # import code to regenerate the twin GCN.
 from _01_twin_gcn import *
+import tensorflow.keras.backend as K_backend
 
 # misc imports.
 import os
@@ -51,22 +52,34 @@ def writeFEPSpaceResults(results_path, reference_path, output_path):
 	fepspace_smiles_sems = []
 	with open(results_path, "r") as fepspace_results:
 		reader = csv.reader(fepspace_results)
+		next(reader) # skip header
 		for row in reader:
-
 			found = False
-			pert = "_".join(row[0].split("_")[:-1])
+			pert = "_".join(row[0].split("_")[:-1]).replace("lig_", "")
 			tgt = row[0].split("_")[-1]
+
+			# also get the inverse pert.
+			inv_pert = f"{pert.split('~')[1]}~{pert.split('~')[0]}"
 
 			# now find the SMILES information in ref.
 			for ref in fepspace_ref:
-				if ref[0] == pert and ref[1] == tgt:
+
+				if ref[0].replace("lig_", "") == pert and ref[1] == tgt:
 					found = True
 					fepspace_smiles_sems.append([ref[3], ref[4], row[-1], pert, tgt])
+					break
+
+				elif ref[0].replace("lig_", "") == inv_pert and ref[1] == tgt:
+					found = True
+					# found the inverse pert. just append the inverse of the inverse.
+					fepspace_smiles_sems.append([ref[4], ref[3], row[-1], pert, tgt])
+					break
 
 			if not found:
 				fail_counter += 1
 			elif found:
 				success_counter += 1
+
 	print(f"Found {success_counter} SMILES references; unable to find {fail_counter}.")
 
 	# now write to file.
@@ -82,7 +95,7 @@ def writeFEPSpaceResults(results_path, reference_path, output_path):
 def modelTransfer(base_model, n_layers_remove, n_layers_add, dropout=False):
 	"""
 	Removes the last n layers from an existing NN; replaces them with n new layers
-	leading up to a single linear neuron.
+	leading up to a single neuron.
 	"""
 	# remove n layers by selecting the layer at the correct index.
 	base_output = base_model.layers[-n_layers_remove].output
@@ -283,6 +296,7 @@ def trainBaseModels(apfp_set, ecfp_set, props_set, y_labels, write_path):
 		rf.fit(feat_set, y_labels)
 		pickle.dump(rf, open(write_path+"fit_rf_"+name+".pkl", "wb"))
 
+
 # @@@@@@@@@@@@@@@@@@@@@  
 
 
@@ -295,8 +309,8 @@ if __name__ == "__main__":
 
 	output_path = "process/fepspace_smiles_per_sem.csv"
 	writeFEPSpaceResults(
-		results_path="input/fepspace_training_set_main.csv",
-		reference_path="input/fepspace_perts.csv",
+		results_path="input/fepspace_sems_full_balanced.csv",
+		reference_path="input/fepspace_perts_full_compiled.csv",
 		output_path=output_path)
 
 	# load the dataset into a dataframe.
@@ -327,161 +341,174 @@ if __name__ == "__main__":
 	fepspace_df["atom_mappings"] = [ retrieveRGroupMappings(*a) for a in tuple(zip(
 			fepspace_df["target"], fepspace_df["ligand1_original_pert_name"])) ]
 
-
-	########## CROSS VALIDATION #######
-	# split into n folds. Transfer-learn, finetune and save each.
-	kf = KFold(n_splits=5, shuffle=True)
-	for K, (train_index, valid_index) in enumerate(kf.split(fepspace_df)):
+	for rep in range(10):
 		print("£"*100)
-		print(f"WORKING ON CV SPLIT {K}")
-
-
-		############## featurise and split the input data ##################
-		print("\nGenerating graphs from SMILES..")
-
-		# Train set: 
-		print("\nSetting up training set.")
-		x_train_0 = graphs_from_smiles(fepspace_df.iloc[train_index].ligand1_smiles)
-		x_train_1 = graphs_from_smiles(fepspace_df.iloc[train_index].ligand2_smiles)
-		y_train = fepspace_df.iloc[train_index].fepspace_sem
-		train_mapping_arrays = fepspace_df.iloc[train_index].atom_mappings.values.tolist()
-		train_set = MPNNDataset(x_train_0, x_train_1, train_mapping_arrays, y_train)
-		print("Size:",len(y_train))
-
-		# Valid set: 
-		print("\nSetting up validation set.")
-		x_valid_0 = graphs_from_smiles(fepspace_df.iloc[valid_index].ligand1_smiles)
-		x_valid_1 = graphs_from_smiles(fepspace_df.iloc[valid_index].ligand2_smiles)
-		y_valid = fepspace_df.iloc[valid_index].fepspace_sem
-		valid_mapping_arrays = fepspace_df.iloc[valid_index].atom_mappings.values.tolist()
-		valid_set = MPNNDataset(x_valid_0, x_valid_1, valid_mapping_arrays, y_valid)
-		print("Size:",len(y_valid))
-
-		
-
-		############## build MPNN MODELS ##################
-
-		# Build the lambda 0 and 1 legs (both are individual MPNNs).
-		print("\nBuilding model..")
-		fepnn = MPNNModel(
-			atom_dim_0=x_train_0[0][0][0].shape[0], bond_dim_0=x_train_0[1][0][0].shape[0],
-			atom_dim_1=x_train_1[0][0][0].shape[0], bond_dim_1=x_train_1[1][0][0].shape[0],
-			r_group_mapping_dim=valid_mapping_arrays[0].shape[0]
-			)
-
-		# now load in pre-trained weights.
-		weights_path = "process/trained_model_weights/weights"
-		print(f"Loading model weights from {weights_path}..")
-		fepnn.load_weights(weights_path)
-
-		######################################################################
-		######################################################################
-		######################################################################
-		#################### TRANSFER LEARNING ###############################
-		######################################################################
-		######################################################################
-		# now transfer-learn. First, attach new layers to the model while removing the last few.
-		print("Replacing last n layers with untrained FCNN layers..")
-		transferred_fepnn = modelTransfer(base_model=fepnn, 
-							n_layers_remove=n_layers_remove, n_layers_add=n_layers_add,
-							dropout=False)
-		transferred_fepnn.compile(
-			loss=keras.losses.LogCosh(),
-			optimizer=keras.optimizers.Adam(learning_rate=5e-4),
-			metrics=['mae'],
-			)
-
-		print("Fitting transferred model..")
-		es_callback = tf.keras.callbacks.EarlyStopping(monitor='val_mae', 
-			patience=n_patience_early_stopping, restore_best_weights=True, verbose=1)
-
-		history = transferred_fepnn.fit(
-		train_set,
-			validation_data=valid_set,
-			epochs=n_epochs,
-			verbose=2,
-			callbacks=[es_callback]
-		)
-
-		# save training information.
-		print("Saving training information..")
-		pd.DataFrame(history.history).to_csv(f"process/training_history_transfer_{K}.csv")
-		plt.figure()
-		plt.plot(history.history['mae'], label="Train")
-		plt.plot(history.history['val_mae'], label="Validation")
-		plt.ylabel('Loss - mean absolute error of SEM / kcal$\cdot$mol$^{-1}$')
-		plt.xlabel('Epoch')
-		plt.legend(loc='upper left')
-		plt.savefig(f'process/training_history_plot_transfer_{K}.png')
-
-		# save model weights. The model can be restored in later scripts by reconstructing
-		# the classes in this script and loading the weights.
-		weights_path = f"process/trained_model_weights/weights_transfer_{K}"
-		print(f"Saving model weights to {weights_path}..")
-		transferred_fepnn.save_weights(weights_path)
-
-		lowest_val_mae_transfer = min(pd.DataFrame(history.history)["val_mae"])
-
-		######################################################################
-		######################################################################
-		######################################################################
-		######################### FINETUNING #################################
-		######################################################################
-		######################################################################	
-		# unfreeze all layers to see if we can further push down the validation error.
-		print("\n"+("@"*50))
-		print("Fine-tuning.")
-		# copy the model and unfreeze weights. 
-		finetuned_model = tf.keras.models.clone_model(transferred_fepnn)
-		finetuned_model.set_weights(transferred_fepnn.get_weights())
-
-		for layer in finetuned_model.layers:
-			layer.trainable = True
-
-		print(finetuned_model.summary())
-
-		# continue with training protocol as before.
-		finetuned_model.compile(
-			loss=keras.losses.LogCosh(),
-			optimizer=keras.optimizers.Adam(learning_rate=5e-5),
-			metrics=['mae'],
-			)
-
-		history = finetuned_model.fit(
-		train_set,
-			validation_data=valid_set,
-			epochs=n_epochs,
-			verbose=2,
-			callbacks=[es_callback]
-		)
-
-		# save training information.
-		print("Saving training information..")
-		pd.DataFrame(history.history).to_csv(f"process/training_history_finetuned_{K}.csv")
-
-		plt.figure()
-		plt.plot(history.history['mae'], label="Train")
-		plt.plot(history.history['val_mae'], label="Validation")
-		plt.ylabel('Loss - mean absolute error of SEM / kcal$\cdot$mol$^{-1}$')
-		plt.xlabel('Epoch')
-		plt.legend(loc='upper left')
-		plt.savefig(f'process/training_history_plot_finetuned_{K}.png')
-
-		lowest_val_mae_finetune = min(pd.DataFrame(history.history)["val_mae"])
-
-		# save model weights. The model can be restored in later scripts by reconstructing
-		# the classes in this script and loading the weights.
-		weights_path = f"process/trained_model_weights/weights_finetuned_{K}"
-		if lowest_val_mae_finetune < lowest_val_mae_transfer:
-			print("Finetuned model performs better than transfer-learned model.")
-			print(f"Saving model weights to {weights_path}..")
-			finetuned_model.save_weights(weights_path)
-
-		elif lowest_val_mae_finetune > lowest_val_mae_transfer:
-			print("Finetuned model performs worse than transfer-learned model. Saving TF model instead.")
-			print(f"Saving model weights to {weights_path}..")
-			transferred_fepnn.save_weights(weights_path)
+		print(f"REPLICATE {rep}")
+		print("£"*100)
+		########## CROSS VALIDATION #######
+		# split into n folds. Transfer-learn, finetune and save each.
+		kf = KFold(n_splits=5, shuffle=True)
+		for K, (train_index, valid_index) in enumerate(kf.split(fepspace_df)):
 			
+			print(f"WORKING ON CV SPLIT {K}")
+
+
+			############## featurise and split the input data ##################
+			print("\nGenerating graphs from SMILES..")
+
+			# Train set: 
+			print("\nSetting up training set.")
+			x_train_0 = graphs_from_smiles(fepspace_df.iloc[train_index].ligand1_smiles)
+			x_train_1 = graphs_from_smiles(fepspace_df.iloc[train_index].ligand2_smiles)
+			y_train = fepspace_df.iloc[train_index].fepspace_sem
+			train_mapping_arrays = fepspace_df.iloc[train_index].atom_mappings.values.tolist()
+			train_set = MPNNDataset(x_train_0, x_train_1, train_mapping_arrays, y_train)
+			print("Size:",len(y_train))
+
+			# Valid set: 
+			print("\nSetting up validation set.")
+			x_valid_0 = graphs_from_smiles(fepspace_df.iloc[valid_index].ligand1_smiles)
+			x_valid_1 = graphs_from_smiles(fepspace_df.iloc[valid_index].ligand2_smiles)
+			y_valid = fepspace_df.iloc[valid_index].fepspace_sem
+			valid_mapping_arrays = fepspace_df.iloc[valid_index].atom_mappings.values.tolist()
+			valid_set = MPNNDataset(x_valid_0, x_valid_1, valid_mapping_arrays, y_valid)
+			print("Size:",len(y_valid))
+
+			
+
+			############## build MPNN MODELS ##################
+
+			# Build the lambda 0 and 1 legs (both are individual MPNNs).
+			print("\nBuilding model..")
+			fepnn = MPNNModel(
+				atom_dim_0=x_train_0[0][0][0].shape[0], bond_dim_0=x_train_0[1][0][0].shape[0],
+				atom_dim_1=x_train_1[0][0][0].shape[0], bond_dim_1=x_train_1[1][0][0].shape[0],
+				r_group_mapping_dim=valid_mapping_arrays[0].shape[0]
+				)
+
+			# now load in pre-trained weights.
+			weights_path = "process/trained_model_weights/weights"
+			print(f"Loading model weights from {weights_path}..")
+			fepnn.load_weights(weights_path)
+
+			######################################################################
+			######################################################################
+			######################################################################
+			#################### TRANSFER LEARNING ###############################
+			######################################################################
+			######################################################################
+
+			# try/except to catch heisenbug in tensorflow, similar to 
+			# https://stackoverflow.com/questions/49951822/invalidargumenterror-concatop-dimensions-of-inputs-should-match
+			try:
+				# now transfer-learn. First, attach new layers to the model while removing the last few.
+				print("Replacing last n layers with untrained FCNN layers..")
+				transferred_fepnn = modelTransfer(base_model=fepnn, 
+									n_layers_remove=n_layers_remove, n_layers_add=n_layers_add,
+									dropout=False)
+				transferred_fepnn.compile(
+					loss=keras.losses.LogCosh(),
+					optimizer=keras.optimizers.Adam(learning_rate=5e-4),
+					metrics=['mae'],
+					)
+
+				print("Fitting transferred model..")
+				es_callback = tf.keras.callbacks.EarlyStopping(monitor='val_mae', 
+					patience=n_patience_early_stopping, restore_best_weights=True, verbose=1)
+
+				history = transferred_fepnn.fit(
+				train_set,
+					validation_data=valid_set,
+					epochs=n_epochs,
+					verbose=2,
+					callbacks=[es_callback]
+				)
+
+				# save training information.
+				print("Saving training information..")
+				pd.DataFrame(history.history).to_csv(f"process/training_history_transfer_{rep}_{K}.csv")
+				plt.figure()
+				plt.plot(history.history['mae'], label="Train")
+				plt.plot(history.history['val_mae'], label="Validation")
+				plt.ylabel('Loss - mean absolute error of SEM / kcal$\cdot$mol$^{-1}$')
+				plt.xlabel('Epoch')
+				plt.legend(loc='upper left')
+				plt.savefig(f'process/training_history_plot_transfer_{K}.png')
+
+				# save model weights. The model can be restored in later scripts by reconstructing
+				# the classes in this script and loading the weights.
+				weights_path = f"process/trained_model_weights/weights_transfer_{rep}_{K}"
+				print(f"Saving model weights to {weights_path}..")
+				transferred_fepnn.save_weights(weights_path)
+
+				lowest_val_mae_transfer = min(pd.DataFrame(history.history)["val_mae"])
+
+				######################################################################
+				######################################################################
+				######################################################################
+				######################### FINETUNING #################################
+				######################################################################
+				######################################################################	
+				# unfreeze all layers to see if we can further push down the validation error.
+				print("\n"+("@"*50))
+				print("Fine-tuning.")
+				# copy the model and unfreeze weights. 
+				finetuned_model = tf.keras.models.clone_model(transferred_fepnn)
+				finetuned_model.set_weights(transferred_fepnn.get_weights())
+
+				for layer in finetuned_model.layers:
+					layer.trainable = True
+
+				print(finetuned_model.summary())
+
+				# continue with training protocol as before.
+				finetuned_model.compile(
+					loss=keras.losses.LogCosh(),
+					optimizer=keras.optimizers.Adam(learning_rate=5e-5),
+					metrics=['mae'],
+					)
+
+				history = finetuned_model.fit(
+				train_set,
+					validation_data=valid_set,
+					epochs=n_epochs,
+					verbose=2,
+					callbacks=[es_callback]
+				)
+
+				# save training information.
+				print("Saving training information..")
+				pd.DataFrame(history.history).to_csv(f"process/training_history_finetuned_{rep}_{K}.csv")
+
+				plt.figure()
+				plt.plot(history.history['mae'], label="Train")
+				plt.plot(history.history['val_mae'], label="Validation")
+				plt.ylabel('Loss - mean absolute error of SEM / kcal$\cdot$mol$^{-1}$')
+				plt.xlabel('Epoch')
+				plt.legend(loc='upper left')
+				plt.savefig(f'process/training_history_plot_finetuned_{rep}_{K}.png')
+
+				lowest_val_mae_finetune = min(pd.DataFrame(history.history)["val_mae"])
+
+				# save model weights. The model can be restored in later scripts by reconstructing
+				# the classes in this script and loading the weights.
+				weights_path = f"process/trained_model_weights/weights_finetuned_{rep}_{K}"
+				if lowest_val_mae_finetune < lowest_val_mae_transfer:
+					print("Finetuned model performs better than transfer-learned model.")
+					print(f"Saving model weights to {weights_path}..")
+					finetuned_model.save_weights(weights_path)
+
+				elif lowest_val_mae_finetune > lowest_val_mae_transfer:
+					print("Finetuned model performs worse than transfer-learned model. Saving TF model instead.")
+					print(f"Saving model weights to {weights_path}..")
+					transferred_fepnn.save_weights(weights_path)
+			except tf.errors.InvalidArgumentError as e:
+				print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TENSORFLOW ERROR:")
+				print(e)
+				print("\n\n\n\n\n")
+				print("Continuing with next replicate..")
+				continue
+
 	print("\nDone.")
 
 

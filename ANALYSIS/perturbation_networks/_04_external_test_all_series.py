@@ -4,8 +4,6 @@
 # Load the transfer-learned model, predict SEMs. Compare to TRUE SEMs. 
 # Write predictions to file to generate networks with in _04.
 
-# This code is largely copied from 
-
 import pandas as pd
 
 from rdkit import Chem, DataStructs
@@ -28,6 +26,7 @@ import subprocess
 import sys
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+from openbabel import pybel
 
 import glob
 import csv
@@ -104,19 +103,57 @@ def constructSmarts(lig_mol, mcs_object):
     # get all the fragment indices.
     non_mcs_indices = set(ligand_indices) - set(mcs_indices)
 
-
     new_smarts = None
     anchor_atoms = []
+    anchor_atoms_idcs = []
 
     for frag_idx in non_mcs_indices:
         # get the neighbours for this fragment atom.
         nghbrs = lig_mol.GetAtomWithIdx(frag_idx).GetNeighbors()
 
+        nghbr_ats = [ lig_mol.GetAtomWithIdx(nghbr.GetIdx()).GetSmarts() for nghbr in nghbrs ] 
+
         for nghbr in nghbrs:
             # find the set difference.
             if not nghbr.GetIdx() in non_mcs_indices:
                 anchor_atoms.append(lig_mol.GetAtomWithIdx(nghbr.GetIdx()).GetSmarts())
+                anchor_atoms_idcs.append(nghbr.GetIdx())
 
+    # correct an issue with MCS, where e.g. an isopropyl is grafted as two methyls because the MCS 
+    # extends into the base carbon of the isopropyl.
+    molfrags = Chem.GetMolFrags(lig_fragments, asMols=True, sanitizeFrags=False)
+
+    if len(anchor_atoms_idcs) == 3:
+        if "." in Chem.MolToSmiles(lig_fragments): # exclude fused rings.
+
+            if anchor_atoms_idcs[0] == anchor_atoms_idcs[1] == anchor_atoms_idcs[2]:
+                # this will be an isobutyl (-type) R-group. Correct the lig_fragments.
+                anchor_atom = lig_mol.GetAtomWithIdx(anchor_atoms_idcs[0]).GetSmarts()
+
+                fr_0 = Chem.MolToSmiles(lig_fragments).split(".")[0].partition("]")[-1]
+                fr_1 = Chem.MolToSmiles(lig_fragments).split(".")[1].partition("]")[-1]
+                try:
+                    fr_2 = Chem.MolToSmiles(lig_fragments).split(".")[2].partition("]")[-1]
+                except IndexError:
+                    new_smarts = f"{anchor_atom}[1*]({fr_0})({fr_1})"
+                    return new_smarts # skips the third fragment if there is none.
+
+
+                new_smarts = f"{anchor_atom}[1*]({fr_0})({fr_1}){fr_2}"
+                return new_smarts
+    elif len(anchor_atoms_idcs) == 2:
+        if "." in Chem.MolToSmiles(lig_fragments): # exclude fused rings.
+
+            if anchor_atoms_idcs[0] == anchor_atoms_idcs[1]:
+                # this will be an isopropyl (-type) R-group. Correct the lig_fragments.
+                anchor_atom = lig_mol.GetAtomWithIdx(anchor_atoms_idcs[0]).GetSmarts()
+                fr_0 = Chem.MolToSmiles(lig_fragments).split(".")[0].partition("]")[-1]
+                fr_1 = Chem.MolToSmiles(lig_fragments).split(".")[1].partition("]")[-1]
+
+                new_smarts = f"{anchor_atom}[1*]({fr_0}){fr_1}"
+                return new_smarts            
+
+    # if no need to correct, just continue as normal, i.e. loop over R-groups.
     for anchor, molfrag in zip(anchor_atoms, Chem.GetMolFrags(lig_fragments, asMols=True, sanitizeFrags=False)):
         # clean up anchor. We really only care about aromatic vs non-aromatic etc.
         anchor = anchor.replace("@","").replace("[","").replace("]","")
@@ -136,7 +173,7 @@ def constructSmarts(lig_mol, mcs_object):
             new_smarts = frag_smarts_anchored
         else:
             new_smarts += "."+frag_smarts_anchored
-    
+
     # sometimes the picked ligand is the actual MCS so there are no pert SMARTS.
     if not new_smarts:
         new_smarts = ""
@@ -153,17 +190,60 @@ def rewriteSMARTS(smarts_string):
         """Splits a ligand's fragments and processes each; puts anchor atom at base of each fragment."""
         fused_ring = False
         frags_whole_rewritten = None
-        
-        # if trihalo, we can merge that into a single R group (i.e. fragment).
+
+        ####### MANUAL REPLACEMENTS
+        # based on visualising specific outlier perturbations.
+
+        # remove some stereo information that we don't need which just makes parsing 
+        # these fragments even more complicated.
+        if not ":" in frags_smarts and "[2*]" in frags_smarts:
+            # dealing with a non-fused ring structure. We can replace the attachment
+            # point with a carbon; just need to determine whether it should be aromatic
+            # or aliphatic.
+            if frags_smarts.count("c") < frags_smarts.count("C"):
+                # there's an edge case here; [2*] is not always a ring structure. these perts are failing now in some cases.
+                # frags_smarts = frags_smarts.replace("[2*]", "C1")
+                # frags_smarts = frags_smarts[:2]+frags_smarts[2:].replace("C", "C1", 1) # set the first-occurring carbon as ring root.
+                frags_smarts = frags_smarts.replace("[2*]", "C1")
+                frags_smarts = frags_smarts[:2]+frags_smarts[2:].replace("C", "C1", 1) # set the first-occurring carbon as ring root.
+
+            else:
+                frags_smarts = frags_smarts.replace("[2*]", "c1")
+                frags_smarts = frags_smarts[:2]+frags_smarts[2:].replace("c", "c1", 1) # set the first-occurring carbon as ring root.
+
+
+        replace_queries = [
+                            ["CH", "C"],
+                            ["C@H", "C"],
+                            ["[C@H]", "C"],
+                            ["[C]", "C"],
+                            ]
+        for source, target in replace_queries:
+            frags_smarts = frags_smarts.replace(source, target)
+
+
+        # if trihalo, we can merge that into a single R group (i.e. fragment). These are dirty patches, 
+        # protocol should be adjusted in FEP-Space generation.
         if "[C*]F.[C*]F.[C*]F" in frags_smarts:
-            frags_smarts = frags_smarts.replace("[C*]F.[C*]F.[C*]F", "[C*](F)(F)F")
+            frags_smarts = frags_smarts.replace("[C*]F.[C*]F.[C*]F", "C[1*](F)(F)F")
         elif "[C*]Cl.[C*]Cl.[C*]Cl" in frags_smarts:
-            frags_smarts = frags_smarts.replace("[C*]Cl.[C*]Cl.[C*]Cl", "[C*](Cl)(Cl)Cl")
+            frags_smarts = frags_smarts.replace("[C*]Cl.[C*]Cl.[C*]Cl", "C[1*](Cl)(Cl)Cl")
+
+        for idx_a, idx_b, idx_c in itertools.permutations(["1", "2", "3"], 3):
+            # indices are random; cover all possible orders and replace to isopropyl.
+            if f"C[{idx_a}*]C.C[{idx_b}*]C.C[{idx_c}*]C" in frags_smarts:
+                frags_smarts = frags_smarts.replace(f"C[{idx_a}*]C.C[{idx_b}*]C.C[{idx_c}*]C", 
+                                                        "C[1*]C(C)(C)C")
+        # NB: above conditionals may be obsolete due to isopropyl-type bugfixes in constructSmarts().
         
-        # replace SMARTS notation style for CH with C (will protonate later in workflow anyway)
-        frags_smarts = frags_smarts.replace("CH", "C")
-        frags_smarts = frags_smarts.replace("C@H", "C")
-    
+        # deal with a special case; R-group is a phenyl. This messes with the grafting algorithm,
+        # (as the common scaffold is also benzene) so has to be set manually.  
+        if frags_smarts == "c[1*]:ccccc:[2*]":
+            frags_smarts = "c[1*]c1ccccc1"
+
+        ####### END OF MANUAL REPLACEMENTS
+
+
         # now rewrite each fragment.
         for frag in frags_smarts.split("."):
             frag_parsed = None
@@ -191,11 +271,10 @@ def rewriteSMARTS(smarts_string):
                 frags_whole_rewritten += "."+frag_parsed
             else:
                 frags_whole_rewritten = frag_parsed
-            
-            # record if this fragment contains a fused ring (multiple wildcards).  
-            if frag_parsed.count("*") == 2:
+            # record if this fragment contains a fused ring (multiple attachment points).  
+            if frag_parsed.count(":") == 2:
                 fused_ring = True
-        
+
         # in case the fragments for this ligand contain a fused ring (multiple wildcards), reorder such
         # that the fused ring information comes first (simplifies grafting the fragments onto scaffold).
         if fused_ring:
@@ -207,6 +286,7 @@ def rewriteSMARTS(smarts_string):
             frags_whole_rewritten = ".".join(reordered)
                   
         return frags_whole_rewritten
+
     return constructPerFrag(frags_1), constructPerFrag(frags_2)
 
 def graftToScaffold(frag):
@@ -223,29 +303,40 @@ def graftToScaffold(frag):
     # abort this perturbation if there are too many R groups such that the 6 carbons on benzene are not enough.
     if frag.count(".") >= 5:
         #print("Aborting this pert --> more than 6 R groups.")
-        return None        
-    
+        return None       
+
     # loop over the molecules in this fragment.
     for fr in frag.split("."):
         # if the fragment is empty, this side of the perturbation is empty. Exit the loop to just keep benzene.
         if len(fr) == 0:
             break
+
+        if fr[0] == "[":
+            # catch rare cases where anchor atom had stereo information.
+            fr = fr[1]+fr[2:]
             
         # count the number of wildcards in this set of fragments.
-        if fr.count("*") == 1:
+        if fr.count("*") <= 1:
             # in this case we can simply graft the structure onto benzene.
             anchor = fr[0]
+
+
             if anchor == "c":
                 # removing aromatic anchor will make r_group graft onto benzene directly (making it use the aromatic 
                 # benzene carbon as anchor).
                 anchor = ""
             r_group = fr[5:]
-
-            scaffold_mol = Chem.ReplaceSubstructs(scaffold_mol, 
-                                     Chem.MolFromSmiles('C'), 
-                                     Chem.MolFromSmiles("C"+anchor+r_group),
-                                     replaceAll=False,
-                                    )[0]
+            
+            try:
+                r_group_mol = Chem.MolFromSmiles("C"+anchor+r_group)
+                scaffold_mol = Chem.ReplaceSubstructs(scaffold_mol, 
+                                         Chem.MolFromSmiles('C'), 
+                                         r_group_mol,
+                                         replaceAll=False,
+                                        )[0]
+            # if no failed r_group, return as None. Next loop iteration will succeed in grafting.
+            except:
+                return None
 
 
         else:
@@ -277,7 +368,6 @@ def graftToScaffold(frag):
             Chem.SanitizeMol(scaffold_mol)
         except:
             pass
-    # all done. Checks?
     
     return scaffold_mol    
 
@@ -359,14 +449,33 @@ def createFusedRingScaffold(input_frag):
                
 def loadEnsemble(len_k, path_to_weights, input_model):
     """Loads k weights into k copies of input tf.keras model given weights path."""
-    models_collection = []
+    models_collections = []
+    model_paths = glob(path_to_weights+"*.data*")
 
-    for k in range(len_k):
-        k_model = tf.keras.models.clone_model(input_model)
-        k_model.load_weights(f"{weights_path}_{k}")
-        models_collection.append(k_model)
+    replicates = [ int(path.split("_")[4]) for path in model_paths ]
+    n_replicates = max(replicates)
 
-    return models_collection
+    for rep in range(n_replicates):
+        rep_model_basepath = f"{path_to_weights}_{rep}_*"
+
+        models_collection = []
+        
+        for k in range(len_k):
+            k_model_path = rep_model_basepath.replace("*", str(k))
+                   
+            k_model = tf.keras.models.clone_model(input_model)
+            try:
+                k_model.load_weights(k_model_path)
+                models_collection.append(k_model)
+            except tf.errors.NotFoundError:
+                pass # in rare cases some model training fails; see training code.
+
+
+        models_collections.append(models_collection)
+
+    #print(f"Loaded a total of {len(models_collection)} models; {len_k} CV folds.")
+
+    return models_collections
 
 def predictEnsemble(ensemble, test_dataset):
     """Given an ensemble of tf.keras models with loaded weights and a test set, 
@@ -391,12 +500,30 @@ def RDKitToBSSMol(mol):
     os.remove("tmp_mol.pdb")  
     return bss_mol  
 
+def reloadLigand(ligand_smiles):
+    """Loads a SMILES entry into RDKit, attempts to clean the structure and returns 
+    a re-shuffled SMILES equivalent of the processed input. 
+    """
+    # use rdkit to write alternative SMILES.
+    tmpmol = Chem.MolFromSmiles(ligand_smiles)
+
+    # attempt to clean the structure.
+    Chem.SanitizeMol(tmpmol)
+    tmpmol.ClearComputedProps()
+    tmpmol.UpdatePropertyCache()
+
+    # reload through PDB.
+    AllChem.EmbedMolecule(tmpmol) # adding 3D coordinates to the ligand helps with OFF processing.
+    Chem.MolToPDBFile(tmpmol, "tmp/mol.pdb")
+    bss_mol = BSS.IO.readPDB("tmp/mol.pdb")[0]
+
+    return Chem.MolToSmiles(tmpmol, doRandom=True), bss_mol
+
+
 
 def parameteriseLigand(input_ligand):
     """Parameterise an input BSS ligand structure with GAFF2 from SMILES input. returns the parameterised ligand
     and the used SMILES."""
-    if os.path.exists("tmp_setup"):
-        shutil.rmtree("tmp_setup")
     
     try:
         input_ligand_p = BSS.Parameters.gaff2(input_ligand, charge_method="GAS").getMolecule()
@@ -405,28 +532,27 @@ def parameteriseLigand(input_ligand):
         # introduce stereochemistry, see https://github.com/openforcefield/openff-toolkit/issues/146
         try:
             input_ligand_p = BSS.Parameters.gaff2(input_ligand.replace("[C]", "[C@H]"), charge_method="GAS").getMolecule()
-    
+
+
         except BSS._Exceptions.ParameterisationError:
             # if it fails again, OFF might be struggling with the input SMILES. For these edge-cases 
             # sometimes it helps shuffling the order of SMILES. Try a few times.
-            for attempt in range(5):
+            for attempt in range(15):
                 try:
-                    # use rdkit to write alternative SMILES.
-                    tmpmol = Chem.MolFromSmiles(input_ligand)
-                    newsmiles = Chem.MolToSmiles(tmpmol, doRandom=True)
-                    print("Retrying with SMILES shuffle:", newsmiles)
-                    input_ligand_p = BSS.Parameters.gaff2(newsmiles, charge_method="GAS").getMolecule()
-                    print("Success!")
+                    newsmiles, bss_mol = reloadLigand(input_ligand)
+                    input_ligand_p = BSS.Parameters.gaff2(bss_mol, 
+                            charge_method="GAS").getMolecule()
                     # return the new smiles as well. 
                     input_ligand = newsmiles
                     break
                     
-                except BSS._Exceptions.ParameterisationError:
+                except BSS._Exceptions.ParameterisationError as e:
+                    err_msg = e
                     input_ligand_p = None 
 
         
     if input_ligand_p == None:
-        print("Bad input, returning None:", input_ligand)
+        print(f"Bad input {err_msg}, returning None:", input_ligand)
         
     return input_ligand_p, input_ligand
 
@@ -561,11 +687,18 @@ def featurisePerturbations(perts, param_dict):
     parameterised (GAFF2) molecule object value for each input file key.
 
     returns data for each in shape [[lig_1, lig2], [],[]]"""
+    pert_to_investigate = None # enter name of perturbation here if investigating faulty featurisation. 
+
     pert_features, pert_names, pert_mappings, ha_change_counts, fp_simis = [], [], [], [], []
 
     
     for pert in tqdm(perts, total=len(perts)):
+      
       pert_name = pert[0].split("/")[-1].replace(".sdf", "")+"~"+pert[1].split("/")[-1].replace(".sdf", "")
+      
+      if pert_to_investigate: # for testing certain perturbations.
+        if pert_name != pert_to_investigate:
+            continue
 
       ####################################################################
       ####################################################################
@@ -588,54 +721,67 @@ def featurisePerturbations(perts, param_dict):
       # count the number of perturbed heavy atoms.
       ha_change_count, fragA_smiles, fragB_smiles = CountHAChange(fragA, fragB)
 
-      # get the alternative perturbation SMARTS
-      pert_smartsA = constructSmarts(ligA, mcs)
-      pert_smartsB = constructSmarts(ligB, mcs)
-      pert_smarts = pert_smartsA+"~"+pert_smartsB
+            # get the alternative perturbation SMARTS and graft to the FEP-Space scaffold.
+      fail = False
+      for _ in range(15):
+          pert_smartsA = constructSmarts(ligA, mcs)
+          pert_smartsB = constructSmarts(ligB, mcs)
+          pert_smarts = pert_smartsA+"~"+pert_smartsB
+          frags_1, frags_2 = rewriteSMARTS(pert_smarts) 
 
-      frags_1, frags_2 = rewriteSMARTS(pert_smarts) 
+          # we've excluded charge perturbations from the training set as these were deemed out of scope.
+          # for this test set just neutralise the charges. 
+          frags_1 = frags_1.replace("+", "")
+          frags_2 = frags_2.replace("+", "")
+          frags_1 = frags_1.replace("-", "")
+          frags_2 = frags_2.replace("-", "")
 
-      # we've excluded charge perturbations from the training set as these were deemed out of scope.
-      # for this test set just neutralise the charges. 
-      frags_1 = frags_1.replace("+", "")
-      frags_2 = frags_2.replace("+", "")
-      frags_1 = frags_1.replace("-", "")
-      frags_2 = frags_2.replace("-", "")
-
-      # graft the R groups to a benzene scaffold.
-      try:
           abstract_mol_1 = graftToScaffold(frags_1)
           abstract_mol_2 = graftToScaffold(frags_2)
-      except:
-          # fails because of charge jump. instead, denote as just benzene abstracts and catch
-          # later using ha_change_count; this perturbation can be set to have a high SEM.
-          abstract_mol_1 = abstract_mol_2 = Chem.MolFromSmiles("c1ccccc1")
-          ha_change_count = str(ha_change_count)+"_fail"
-
-      if not abstract_mol_1 or not abstract_mol_2:
-          # fails because of complex (or too many) fused ring jumps. handle as above.
-          abstract_mol_1 = abstract_mol_2 = Chem.MolFromSmiles("c1ccccc1")
-          ha_change_count = str(ha_change_count)+"_fail"
 
 
-      if not "_fail" in str(ha_change_count):
-          # get the mapping for this perturbation.
-          try:
-            mapping_array = getMapping(param_dict[pert[0]], param_dict[pert[1]], mcs, abstract_mol_1, abstract_mol_2)
+          if abstract_mol_1 and abstract_mol_2:
+            fail = False
+            break # when grafting has succeeded, continue on with the workflow instead of retrying.
 
-          except BSS._Exceptions.AlignmentError:
-            # in very rare cases BSS alignment fails for very large perturbations; for 
-            # these cases return a standard mapping. 
-            mapping_array = {0:0, 1:1, 2:2, 3:3, 4:4, 5:5}
+          else:
+            fail = True # in next iteration the SMILES of pert_smarts will have been shuffled.
+          
+      if pert_to_investigate: # for testing certain perturbations.
+        if pert_name == pert_to_investigate:
+            print(f"FEP-Space deriv. of {pert_to_investigate} (Fail:{fail}):")
+            print("Pert-Smarts:", pert_smarts)
+            print("Rewritten Smarts:", frags_1, frags_2)
+            print(Chem.MolToSmiles(abstract_mol_1), Chem.MolToSmiles(abstract_mol_2))
+            print("Quitting.")
+            sys.exit()     
+
+      if not fail:
+      # MAPPING INFORMATION INJECTION
+        # get the mapping for this perturbation.
+        try:
+          mapping_array = getMapping(param_dict[pert[0]], param_dict[pert[1]], mcs, abstract_mol_1, abstract_mol_2)
+
+        except BSS._Exceptions.AlignmentError:
+          # in very rare cases BSS alignment fails for very large perturbations; for 
+          # these cases return a standard mapping. 
+          mapping_array = {0:0, 1:1, 2:2, 3:3, 4:4, 5:5}
+
       else:
-        # failed featurisations we can just set to default mapping as well.
-        mapping_array = {0:0, 1:1, 2:2, 3:3, 4:4, 5:5}
+        # if after 15 attempts the grafting still failed, flag the perturbation for failure.
+          abstract_mol_1 = abstract_mol_2 = Chem.MolFromSmiles("c1ccccc1")
+          ha_change_count = str(ha_change_count)+"_fail"
+
+          # failed featurisations we can just set to default mapping as well.
+          mapping_array = {0:0, 1:1, 2:2, 3:3, 4:4, 5:5}
+
 
       # featurise the mapping.
       pert_mappings.append(featuriseMapping(mapping_array))
 
       # Get the SMILES for each FEP-Space derivative.
       pert_features.append([Chem.MolToSmiles(abstract_mol_1), Chem.MolToSmiles(abstract_mol_2)])
+
       pert_names.append(pert_name)
       ha_change_counts.append(ha_change_count)
 
@@ -811,8 +957,8 @@ def writeBaselModelPreds(preds, pert_paths, output_pathbase):
 
 
 if __name__ == "__main__":
-    ###################################################################
-    ###################################################################    
+    #################################################################
+    ##################################################################    
     # Load SEM predictor.
     # First, build the network architecture based on reference graph inputs from training.
     fepspace_df = pd.read_csv("process/fepspace_smiles_per_sem.csv", nrows=1)
@@ -830,11 +976,10 @@ if __name__ == "__main__":
     # extend the model with the transfer-learned weight architecture (_02).
     fepnn = modelTransfer(fepnn, 4, 4) # adjust parameters if changes them in _02.
 
-    # now load in pre-trained weights.
+    # now load in pre-trained weights for all five folds of all 10 replicates.
     weights_path = "process/trained_model_weights/weights_finetuned"
     print(f"Loading model weights from {weights_path}_*..")
-    fepnn_ensemble = loadEnsemble(5, weights_path, fepnn) 
-
+    fepnn_ensembles = loadEnsemble(5, weights_path, fepnn) 
 
 
 
@@ -842,12 +987,10 @@ if __name__ == "__main__":
     walltime_storage = []
     for tgt in glob("/home/jscheen/projects/FEPSPACE/fep_ref_ligands/*"):
 
-      if "bace" in tgt:
-        # Exclude BACE as too many perturbations have double fused rings.
+      to_handle = ["tyk2"]
+      if not tgt.split("/")[-1] in to_handle:
+        # populate to_handle with target names to run individually.
         continue
-      if not "tyk2" in tgt:
-        continue
-
 
       start = time.time()
 
@@ -870,78 +1013,83 @@ if __name__ == "__main__":
       print("Parameterising..")
       param_dict = {}
       for lig_path in tqdm(ligs, total=len(ligs)):
-        lig = BSS.IO.readMolecules(lig_path.replace(".sdf", ".mol2"))[0]
-        lig_p, _ = parameteriseLigand(lig)
-        param_dict[lig_path] = lig_p
+        #lig = BSS.IO.readMolecules(lig_path.replace(".sdf", ".mol2"))[0]
+        lig = Chem.MolToSmiles(Chem.SDMolSupplier(lig_path)[0])
+        lig, _ = parameteriseLigand(lig)
+        param_dict[lig_path] = lig
 
-      with open(f"output/series_predictions/{tgt.split('/')[-1]}.csv", "w") as preds_file:
-          writer = csv.writer(preds_file)
-          writer.writerow(["pert_name", "pred_sem_mean", "pred_sem_std", 
-                        "random_sem", "num_ha_change", "fp_similarity"])
-
-          print("\nComputing features for all possible perturbations in the set (MCS + graphs).")
-          
-          perts_featurised, perts_names, pert_mappings, \
-                    ha_change_counts, fp_simis = featurisePerturbations(perts, param_dict)
-
-          perts_dataset = createTestDataset(perts_featurised, pert_mappings)
-            
-          print("\nPredicting SEM per input perturbation.")
-          # make the SEM predictions.
-          pred_sem_values_mean, pred_sem_values_std = predictEnsemble(fepnn_ensemble, perts_dataset)
-          
-          if not len(pred_sem_values_mean) == len(perts_names) == len(ha_change_counts):
-            raise ValueError(f"SEM predictions, perturbation names and num_ha_change " +\
-                f"variables do not match in length! {(pred_sem_values_mean)}, {(perts_names)}, {(ha_change_counts)}")
-          
-          print(f"\nDone. Writing to output/series_predictions/{tgt.split('/')[-1]}.csv.")
-          fail_counter = 0
-
-          for pred_sem_mean, pred_sem_std, pert_name, ha_change_count, fp_simi in zip(
-                                                pred_sem_values_mean,
-                                                pred_sem_values_std,
-                                                perts_names,
-                                                ha_change_counts,
-                                                fp_simis):
-
-            # also make a random SEM prediction to use as negative control later on.
-            random_sem_value = random.uniform(0, 1)
-
-            # replace SEM preds and restore ha_change variable if failed previously during featurisation
-            # (formal charge perturbation issue.)
-            if "_fail" in str(ha_change_count):
-                ha_change_count = int(ha_change_count.replace("_fail",""))
-                pred_sem_mean = max(pred_sem_values_mean)
-                pred_sem_std = max(pred_sem_values_std)
-                fail_counter += 1
-            
+      print("\nComputing features for all possible perturbations in the set (MCS + graphs).")         
+      perts_featurised, perts_names, pert_mappings, \
+                ha_change_counts, fp_simis = featurisePerturbations(perts, param_dict)
+      perts_dataset = createTestDataset(perts_featurised, pert_mappings)
 
 
-            # write results to file. These will be analysed in _04.
-            writer.writerow([
-                              pert_name,
-                              pred_sem_mean,
-                              pred_sem_std,
-                              random_sem_value,
-                              ha_change_count,
-                              fp_simi
-                              ])
-            # also write the inverse perturbation.
-            writer.writerow([
-                              f"{pert_name.split('~')[1]}~{pert_name.split('~')[0]}",
-                              pred_sem_mean,
-                              pred_sem_std,
-                              random_sem_value,
-                              ha_change_count,
-                              fp_simi
-                              ])
-          if fail_counter > 0:
-            print(f"{fail_counter} perturbations failed because of complex fused rings or a change in formal charge. SEM_pred for these was set to {round(max(pred_sem_values_mean), 3)} kcal/mol.")
-          end = time.time()
-          walltime_storage.append([tgt, end-start])
+      ######################## PREDICTIONS
+
+      for i, fepnn_ensemble in enumerate(fepnn_ensembles):
+          print("%"*50)
+          print("REPLICATE", i)
+          with open(f"output/series_predictions/{tgt.split('/')[-1]}_{i}.csv", "w") as preds_file:
+              writer = csv.writer(preds_file)
+              writer.writerow(["pert_name", "pred_sem_mean", "pred_sem_std", 
+                            "random_sem", "num_ha_change", "fp_similarity", "fepspace_pert"])
 
 
+                
+              print("\nPredicting SEM per input perturbation.")
+              # make the SEM predictions.
+              pred_sem_values_mean, pred_sem_values_std = predictEnsemble(fepnn_ensemble, perts_dataset)
+              
+              if not len(pred_sem_values_mean) == len(perts_names) == len(ha_change_counts):
+                raise ValueError(f"SEM predictions, perturbation names and num_ha_change " +\
+                    f"variables do not match in length! {(pred_sem_values_mean)}, {(perts_names)}, {(ha_change_counts)}")
+              
+              print(f"\nDone. Writing to output/series_predictions/{tgt.split('/')[-1]}_{i}.csv.")
+              fail_counter = 0
 
+              for pred_sem_mean, pred_sem_std, pert_name, ha_change_count, fp_simi, fepspace_smiles in zip(
+                                                    pred_sem_values_mean,
+                                                    pred_sem_values_std,
+                                                    perts_names,
+                                                    ha_change_counts,
+                                                    fp_simis,
+                                                    perts_featurised):
+
+                # also make a random SEM prediction to use as negative control later on.
+                random_sem_value = random.uniform(0, 1)
+
+                # replace SEM preds and restore ha_change variable if failed previously during featurisation
+                # (formal charge perturbation issue.)
+                if "_fail" in str(ha_change_count):
+                    ha_change_count = int(ha_change_count.replace("_fail",""))
+                    pred_sem_mean = max(pred_sem_values_mean)
+                    pred_sem_std = max(pred_sem_values_std)
+                    fail_counter += 1
+                
+                # write results to file. These will be analysed in _04.
+                writer.writerow([
+                                  pert_name,
+                                  pred_sem_mean,
+                                  pred_sem_std,
+                                  random_sem_value,
+                                  ha_change_count,
+                                  fp_simi,
+                                  "~".join(fepspace_smiles)
+                                  ])
+                # also write the inverse perturbation.
+                writer.writerow([
+                                  f"{pert_name.split('~')[1]}~{pert_name.split('~')[0]}",
+                                  pred_sem_mean,
+                                  pred_sem_std,
+                                  random_sem_value,
+                                  ha_change_count,
+                                  fp_simi,
+                                  "~".join(fepspace_smiles)
+                                  ])
+              if fail_counter > 0:
+                print(f"{fail_counter} perturbations failed because of complex fused rings or a change in formal charge. SEM_pred for these was set to {round(max(pred_sem_values_mean), 3)} kcal/mol.")
+              end = time.time()
+              walltime_storage.append([tgt, end-start])
 
 
     print("DONE.")

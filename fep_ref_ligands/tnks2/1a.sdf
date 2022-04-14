@@ -1,7 +1,7 @@
 1a
- OpenBabel02152110423D
-Structure written by MMmdl.
- 27 29  0  0  1  0  0  0  0  0999 V2000
+ OpenBabel03212213163D
+
+ 27 29  0  0  0  0  0  0  0  0999 V2000
   -15.3524  -19.2206  -25.9684 C   0  0  0  0  0  0  0  0  0  0  0  0
   -14.6526  -19.7081  -27.0823 C   0  0  0  0  0  0  0  0  0  0  0  0
   -15.8555  -20.1235  -25.0241 C   0  0  0  0  0  0  0  0  0  0  0  0
@@ -29,16 +29,16 @@ Structure written by MMmdl.
   -14.1941  -15.1755  -28.4537 H   0  0  0  0  0  0  0  0  0  0  0  0
   -15.5319  -11.7476  -26.2520 H   0  0  0  0  0  0  0  0  0  0  0  0
   -14.7660  -23.0224  -26.4244 H   0  0  0  0  0  0  0  0  0  0  0  0
-  1  2  1  0  0  0  0
-  1  3  2  0  0  0  0
+  1  2  2  0  0  0  0
+  1  3  1  0  0  0  0
   1 16  1  0  0  0  0
-  2  4  2  0  0  0  0
+  2  4  1  0  0  0  0
   2 18  1  0  0  0  0
-  3  5  1  0  0  0  0
+  3  5  2  0  0  0  0
   3 19  1  0  0  0  0
-  4  7  1  0  0  0  0
+  4  7  2  0  0  0  0
   4 20  1  0  0  0  0
-  5  7  2  0  0  0  0
+  5  7  1  0  0  0  0
   5 21  1  0  0  0  0
   6  8  1  0  0  0  0
   6 16  2  0  0  0  0
@@ -64,5 +64,44 @@ M  END
 
 >  <IC50[nM]>
 540
+
+>  <Total Formal Charge>
+0.0
+
+>  <Favorite_cresset>
+false
+
+>  <MW_cresset>
+222.2
+
+>  <#Atoms_cresset>
+17
+
+>  <SlogP_cresset>
+2.5
+
+>  <TPSA_cresset>
+41.5
+
+>  <Flexibility_cresset>
+0.2
+
+>  <#RB_cresset>
+1
+
+>  <Rof5_cresset>
+0
+
+>  <Filename_cresset>
+ligands_tnks2.sdf
+
+>  <Confs_cresset>
+0
+
+>  <Poses_cresset>
+0
+
+>  <Activity (Primary)_cresset>
+No Primary Activity Set
 
 $$$$

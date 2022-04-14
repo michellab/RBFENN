@@ -101,15 +101,25 @@ class BondFeaturizer(Featurizer):
 def molecule_from_smiles(smiles):
     # MolFromSmiles(m, sanitize=True) should be equivalent to
     # MolFromSmiles(m, sanitize=False) -> SanitizeMol(m) -> AssignStereochemistry(m, ...)
+
+    # some patches here to catch mis-written molecules.
+    smiles = smiles.replace("cl", "c")
+
+    # start.
     molecule = Chem.MolFromSmiles(smiles, sanitize=False)
 
     # If sanitization is unsuccessful, catch the error, and try again without
     # the sanitization step that caused the error
     flag = Chem.SanitizeMol(molecule, catchErrors=True)
-    if flag != Chem.SanitizeFlags.SANITIZE_NONE:
-        Chem.SanitizeMol(molecule, sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL ^ flag)
+    try:
+        if flag != Chem.SanitizeFlags.SANITIZE_NONE:
+            Chem.SanitizeMol(molecule, sanitizeOps=Chem.SanitizeFlags.SANITIZE_ALL ^ flag)
 
-    Chem.AssignStereochemistry(molecule, cleanIt=True, force=True)
+        Chem.AssignStereochemistry(molecule, cleanIt=True, force=True)
+    except:
+        print("Failed:", smiles)
+        # any errors at this point mean a very wonky molecule. Pass the molecule as inserted
+        # without any changes.
     return molecule
 
 

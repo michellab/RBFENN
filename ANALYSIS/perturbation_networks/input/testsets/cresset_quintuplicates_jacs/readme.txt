@@ -1,1 +1,0 @@
-this file was generated from data contained in $FEPSPACE/fep_ref_ligands/cresset_benchmarks. This data was kindly provided by Cresset and contains quintuplicate SOMD runs on a selection of edges across the JACS sets.
