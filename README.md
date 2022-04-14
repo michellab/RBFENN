@@ -6,6 +6,10 @@ Source code to reproduce [arxiv link](https://github.com/MobleyLab/Lomap).
 
 ----------------------------------------------------------------
 
+Feature branch for implementing a command-line interface for the prediction of statistical fluctuations between input ligands.
+
+----------------------------------------------------------------
+
 Given all publicly available RBFE benchmarking datasets, we have created a training domain ('RBFE-Space') that contains a representation of all perturbations present in these datasets by grafting them onto a common benzene scaffold. Then, after running all RBFE simulations for this novel set, we have used this training domain to train ML models to predict the quintuplicate standard error of the mean free energy (SEM). We have adjusted [LOMAP](https://github.com/MobleyLab/Lomap) to ingest these predicted SEM values to use instead of the native LOMAP-score, thereby producing a data-driven method of producing RBFE networks.
 
 ----------------------------------------------------------------
