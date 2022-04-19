@@ -9,11 +9,11 @@ The reason the CLI was designed using this input parsing file is that it takes \
 ----------------------
 Steps:
 
-[WIP] Add explanations for following:
-- CLI -h
-- running example
-- checking output example (notebook)
-- checking distribution plot (notebook)
+- make a conda env using the provided conda_env.yml in ../ and activate it.
+- make a file containing pairs of ligand paths for all required transformations, see examples example_parse_file_*.csv.
+- run the predictor using e.g. \<python predict_sf.py -i example_parse_file_small.csv -o output_example.csv \>
+- check the output file for the resulting data
+- check the example notebook for examples on analysis.
 
 Note: SF predicted is SEM, so the larger the predicted value the higher the predicted SF.
 
