@@ -40,6 +40,9 @@ from _01_twin_gcn import *
 from _02_transfer_learn_sem import *
 
 
+import argparse
+
+
 def CountHAChange(fragment1_mol, fragment2_mol):
     """Takes in two rdkit fragment molecules, counts heavy atom changes and returns the number."""
     fragA_smiles = Chem.MolToSmiles(fragment1_mol)
@@ -967,25 +970,37 @@ def writeBaselModelPreds(preds, pert_paths, output_pathbase):
                 writer.writerow([inv_pert_name, pred_sem])
 
 
-## CLI functions
-
-"""
-TODO:
-make main into argparse.
-
-- input file, folder with ligand files, output file
-- checks:
-    - input file all paths exist and are molecules
-    - input file is csv and 2 cols
-    - folder exists
-    - output file already exists
-    
-    - output: warn if any perts failed, refer to names.
-
-
-"""
 if __name__ == "__main__":
-        ##### MODEL LOADING  
+
+    ##############################################
+    ##############################################
+    ##############################################
+    # catch input and output file paths from CLI.
+
+
+    # catch the CLI flags. This is a quick argparse fix, could do with optimisation of course.
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-i", help="Path to input CSV file containing input pairs of ligands to predict SEMs on. Example line: input_files_example/jmc_27.sdf,input_files_example/ejm_31.sdf",
+                    type=str)
+
+    parser.add_argument("-o", help="Path to output CSV file that will contain pairs of ligands with predicted SEMs.",
+                    type=str)
+
+    args = parser.parse_args()
+
+    input_file = args.i
+    output_file = args.o
+
+    if input_file == None or output_file == None:
+        raise Exception("Provide both -i and -o flags to the CLI. See python predict_sd.py -h for info.")
+
+    ##############################################
+    ##############################################
+    ##############################################
+    # with the input files, make predictions.
+
+    ##### MODEL LOADING  
     # 1) Load SEM predictor.
     # First, build the network architecture based on reference graph inputs from training.
     fepspace_df = pd.read_csv("../ANALYSIS/perturbation_networks/process/fepspace_smiles_per_sem.csv", nrows=1)
@@ -1013,7 +1028,7 @@ if __name__ == "__main__":
     #### LOAD TRANSFORMATIONS AND LIGANDS
     query_transformations = []
     input_ligands = {}
-    with open("example_parse_file_small.csv", "r") as readfile:
+    with open(input_file, "r") as readfile:
         reader = csv.reader(readfile)
         for row in reader:
             query_transformations.append(row)
@@ -1024,7 +1039,7 @@ if __name__ == "__main__":
                     input_ligands[lig_path] = Chem.MolToSmiles(
                         Chem.SDMolSupplier(lig_path)[0])
 
-    # get the original smiles of the transformations too.
+    #get the original smiles of the transformations too.
     query_smiles = []
     for a, b in query_transformations:
         a_smiles = Chem.MolToSmiles(Chem.SDMolSupplier(a)[0])
@@ -1032,7 +1047,7 @@ if __name__ == "__main__":
         query_smiles.append([a_smiles, b_smiles])
 
     # # CLI NOTE: we don't parameterise because we don't attempt to get the atom mapping.
-    # # these two steps are currently very time-consuming and not fit for the current project.
+    # # these two steps are currently very time-consuming and not fit for the current project.
     # # here is the original code though:
     # param_dict = {}
     # for lig_path in tqdm(ligs, total=len(ligs)):
@@ -1057,7 +1072,7 @@ if __name__ == "__main__":
     sf_predictions = []
     print(f"\nPredicting SFs per siamese GNN model in the ensemble (n={len(fepnn_ensembles)}).")
     for fepnn_ensemble in tqdm(fepnn_ensembles):
-          # make the SEM predictions for this replicate.
+          #make the SEM predictions for this replicate.
           pred_sem_values_mean, pred_sem_values_std = predictEnsemble(fepnn_ensemble, perts_dataset)
           sf_predictions.append(pred_sem_values_mean)
 
@@ -1065,11 +1080,11 @@ if __name__ == "__main__":
     # model predictions because of cross validation scheme)
     sf_predictions = np.mean(sf_predictions, axis=0)
     
-    # 5) write out the mean ensemble prediction to the requested output file.
-    with open("example_output_file.csv", "w") as writefile:
+    #5) write out the mean ensemble prediction to the requested output file.
+    with open(output_file, "w") as writefile:
         writer = csv.writer(writefile)
 
-        writer.writerow(["lig-1_path", "lig_2_path", "lig_1_smiles", "lig_2_smiles",
+        writer.writerow(["lig_1_path", "lig_2_path", "lig_1_smiles", "lig_2_smiles",
                         "lig_1_benzene_deriv", "lig_2_benzene_deriv", "sf_prediction"])
 
         for (a,b), (a_ori, b_ori), \
