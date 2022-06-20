@@ -10,3 +10,4 @@ rel_esol_fepspace_valid.csv
 nohup.out
 lambda_*
 ANALYSIS/perturbation_networks/process/inputs/rel_esol_fepspace_train.csv
+CLI/
