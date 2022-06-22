@@ -26,13 +26,14 @@ dependencies:
   - brotlipy=0.7.0=py37h5e8e339_1001
   - bzip2=1.0.8=h7f98852_4
   - c-ares=1.18.1=h7f98852_0
-  - ca-certificates=2021.10.8=ha878542_0
+  - ca-certificates=2022.6.15=ha878542_0
   - cairo=1.16.0=hcf35c78_1003
-  - certifi=2021.10.8=py37h89c1867_1
+  - certifi=2022.6.15=py37h89c1867_0
   - cffi=1.14.4=py37h11fe52a_0
   - cftime=1.5.1=py37hb1e94ed_0
   - chardet=4.0.0=py37h89c1867_1
   - colorama=0.4.4=pyh9f0ad1d_0
+  - colorcet=3.0.0=pyhd8ed1ab_0
   - configargparse=1.5.3=pyhd8ed1ab_0
   - cryptography=35.0.0=py37hf1a17b8_1
   - curl=7.79.1=h2574ce0_1
@@ -143,6 +144,7 @@ dependencies:
   - numexpr=2.7.3=py37he8f5f7f_0
   - numpy=1.21.3=py37h31617e3_0
   - olefile=0.46=pyh9f0ad1d_1
+  - openbabel=3.1.1=py37h200e996_1
   - openff-forcefields=2.0.0=pyh6c4a22f_0
   - openff-toolkit-base=0.10.1=pyhd8ed1ab_0
   - openjpeg=2.4.0=hb52868f_1
@@ -153,6 +155,7 @@ dependencies:
   - pandoc=2.15=h7f98852_0
   - pandocfilters=1.5.0=pyhd8ed1ab_0
   - pango=1.42.4=h7062337_4
+  - param=1.12.2=pyh6c4a22f_0
   - parmed=3.4.3=py37hcd2ae1e_1
   - parso=0.8.2=pyhd8ed1ab_0
   - patsy=0.5.2=pyhd8ed1ab_0
@@ -170,6 +173,8 @@ dependencies:
   - py=1.10.0=pyhd3deb0d_0
   - pycairo=1.20.1=py37hfff247e_0
   - pycparser=2.20=pyh9f0ad1d_2
+  - pyct=0.4.6=py_0
+  - pyct-core=0.4.6=py_0
   - pydot=1.4.2=py37h89c1867_1
   - pygments=2.10.0=pyhd8ed1ab_0
   - pygtail=0.11.1=py_0
