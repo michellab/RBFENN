@@ -1,4 +1,4 @@
-# Machine-learned Predictions of Statistical Fluctuations in Relative Binding Free Energy Calculations and Data-driven Perturbation Network Generation
+# Data-driven Generation of Perturbation Networks for Relative Binding Free Energy Calculations
 
 ![alt text](https://github.com/michellab/data_driven_fep_reliabilities/blob/master/toc_figure.png)
 
