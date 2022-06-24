@@ -1,4 +1,4 @@
-# Data-driven Generation of Perturbation Networks for Relative Binding Free Energy Calculations
+# Data-driven Generation of Perturbation Networks for Relative Binding Free Energy Calculations 
 
 ![alt text](https://github.com/michellab/data_driven_fep_reliabilities/blob/master/toc_figure.png)
 
@@ -23,7 +23,7 @@ Main steps to reproduce:
 
 4) Collect SEM values from simulations in the format of `ANALYSIS/perturbation_networks/input/fepspace_sems_full_balanced.csv`
 
-5) Sequentially run all python scripts/notebooks in `ANALYSIS/perturbation_networks/` to reproduce the RBFE network generation figures used in the paper.
+5) Sequentially run all python scripts/notebooks in `ANALYSIS/perturbation_networks/` to reproduce the majority of RBFE network generation figures used in the paper.
 
 6) Other figures can be reproduced using the notebooks found in `ANALYSIS/fepspace_vs_free_vs_bound/` and `ANALYSIS/lambda_spacing/`
 
