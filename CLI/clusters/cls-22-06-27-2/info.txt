@@ -1,0 +1,8 @@
+Cluster
+cluster "4"
+<missing cluster paramaters>
+
+cluster size was 54. Molecules with stereochemistry were removed by search for "@" in smiles string.
+Molecules with sulfur removed
+Molecules with5 member ring transformations containing oxygen and nitrogen removed. 
+
