@@ -1086,17 +1086,19 @@ if __name__ == "__main__":
 
         writer.writerow(["lig_1_path", "lig_2_path", "lig_1_smiles", "lig_2_smiles",
                         "lig_1_benzene_deriv", "lig_2_benzene_deriv", "sf_prediction"])
-
+        
         for (a,b), (a_ori, b_ori), \
             (a_rbfespace, b_rbfe_space), pred_sf in zip(
             query_transformations, query_smiles, perts_featurised, sf_predictions):
-
-            if a_rbfespace == b_rbfespace == "c1ccccc1":
+            
+            if a_rbfespace == b_rbfe_space == "c1ccccc1":
                 pred_sf = max(sf_predictions)
-
+                
+            #print([a, b, a_ori, b_ori, a_rbfespace, b_rbfe_space, pred_sf])
             # write out the resulting data. 
             writer.writerow([a, b, a_ori, b_ori, \
                             a_rbfespace, b_rbfe_space, pred_sf])
+           
 
 
 
