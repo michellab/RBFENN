@@ -16,162 +16,264 @@ working on input file lambda_0.8000/simfile.dat
 working on input file lambda_0.9000/simfile.dat
 working on input file lambda_1.0000/simfile.dat
 #Subsampling energies according to statistical inefficiency for pymbar
+
+==============================================================
+Sending anonymous Sire usage statistics to http://siremol.org.
+For more information, see http://siremol.org/analytics
+To disable, set the environment variable 'SIRE_DONT_PHONEHOME' to 1
+To see the information sent, set the environment variable 
+SIRE_VERBOSE_PHONEHOME equal to 1. To silence this message, set
+the environment variable SIRE_SILENT_PHONEHOME to 1.
+==============================================================
+
 #Subsampling gradients according to statistical inefficiency
 #running mbar ====================================================
-K (total states) = 11, total samples = 154
+K (total states) = 11, total samples = 187
 N_k = 
-[14 14 14 14 14 14 14 14 14 14 14]
+[17 17 17 17 17 17 17 17 17 17 17]
 There are 11 states with samples.
 Initializing free energies to zero.
 Initial dimensionless free energies with method zeros
 f_k = 
 [0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.]
 Determining dimensionless free energies by Newton-Raphson / self-consistent iteration.
-self consistent iteration gradient norm is     697.21, Newton-Raphson gradient norm is      21560
+self consistent iteration gradient norm is     1192.3, Newton-Raphson gradient norm is      31790
 Choosing self-consistent iteration on iteration 0
-self consistent iteration gradient norm is     598.38, Newton-Raphson gradient norm is     1759.2
+self consistent iteration gradient norm is      966.6, Newton-Raphson gradient norm is       6814
 Choosing self-consistent iteration for lower gradient on iteration 1
-self consistent iteration gradient norm is      529.8, Newton-Raphson gradient norm is     1552.6
+self consistent iteration gradient norm is     832.15, Newton-Raphson gradient norm is     7493.4
 Choosing self-consistent iteration for lower gradient on iteration 2
-self consistent iteration gradient norm is     478.44, Newton-Raphson gradient norm is     1473.4
+self consistent iteration gradient norm is     741.59, Newton-Raphson gradient norm is     7770.3
 Choosing self-consistent iteration for lower gradient on iteration 3
-self consistent iteration gradient norm is     438.52, Newton-Raphson gradient norm is       1414
+self consistent iteration gradient norm is     670.25, Newton-Raphson gradient norm is     4597.3
 Choosing self-consistent iteration for lower gradient on iteration 4
-self consistent iteration gradient norm is     406.43, Newton-Raphson gradient norm is     1348.9
+self consistent iteration gradient norm is     612.91, Newton-Raphson gradient norm is     3073.4
 Choosing self-consistent iteration for lower gradient on iteration 5
-self consistent iteration gradient norm is     379.74, Newton-Raphson gradient norm is     1275.9
+self consistent iteration gradient norm is      566.9, Newton-Raphson gradient norm is     2585.1
 Choosing self-consistent iteration for lower gradient on iteration 6
-self consistent iteration gradient norm is     356.87, Newton-Raphson gradient norm is     1209.4
+self consistent iteration gradient norm is     529.35, Newton-Raphson gradient norm is     2503.8
 Choosing self-consistent iteration for lower gradient on iteration 7
-self consistent iteration gradient norm is     336.79, Newton-Raphson gradient norm is     1149.7
+self consistent iteration gradient norm is      497.8, Newton-Raphson gradient norm is     2496.4
 Choosing self-consistent iteration for lower gradient on iteration 8
-self consistent iteration gradient norm is     318.83, Newton-Raphson gradient norm is     1088.9
+self consistent iteration gradient norm is     470.62, Newton-Raphson gradient norm is     2485.5
 Choosing self-consistent iteration for lower gradient on iteration 9
-self consistent iteration gradient norm is     302.54, Newton-Raphson gradient norm is     1023.6
+self consistent iteration gradient norm is     446.72, Newton-Raphson gradient norm is     2464.6
 Choosing self-consistent iteration for lower gradient on iteration 10
-self consistent iteration gradient norm is     287.62, Newton-Raphson gradient norm is     955.52
+self consistent iteration gradient norm is     425.36, Newton-Raphson gradient norm is     2431.7
 Choosing self-consistent iteration for lower gradient on iteration 11
-self consistent iteration gradient norm is     273.86, Newton-Raphson gradient norm is      889.1
+self consistent iteration gradient norm is     406.02, Newton-Raphson gradient norm is     2382.3
 Choosing self-consistent iteration for lower gradient on iteration 12
-self consistent iteration gradient norm is      261.1, Newton-Raphson gradient norm is     828.01
+self consistent iteration gradient norm is     388.33, Newton-Raphson gradient norm is     2307.9
 Choosing self-consistent iteration for lower gradient on iteration 13
-self consistent iteration gradient norm is     249.23, Newton-Raphson gradient norm is     773.58
+self consistent iteration gradient norm is     372.01, Newton-Raphson gradient norm is     2196.2
 Choosing self-consistent iteration for lower gradient on iteration 14
-self consistent iteration gradient norm is     238.17, Newton-Raphson gradient norm is     725.25
+self consistent iteration gradient norm is     356.84, Newton-Raphson gradient norm is     2043.1
 Choosing self-consistent iteration for lower gradient on iteration 15
-self consistent iteration gradient norm is     227.84, Newton-Raphson gradient norm is     681.83
+self consistent iteration gradient norm is     342.67, Newton-Raphson gradient norm is     1868.3
 Choosing self-consistent iteration for lower gradient on iteration 16
-self consistent iteration gradient norm is     218.18, Newton-Raphson gradient norm is     642.12
+self consistent iteration gradient norm is     329.37, Newton-Raphson gradient norm is     1694.5
 Choosing self-consistent iteration for lower gradient on iteration 17
-self consistent iteration gradient norm is     209.12, Newton-Raphson gradient norm is     605.07
+self consistent iteration gradient norm is     316.86, Newton-Raphson gradient norm is     1518.1
 Choosing self-consistent iteration for lower gradient on iteration 18
-self consistent iteration gradient norm is     200.61, Newton-Raphson gradient norm is     569.82
+self consistent iteration gradient norm is     305.07, Newton-Raphson gradient norm is     1335.8
 Choosing self-consistent iteration for lower gradient on iteration 19
-self consistent iteration gradient norm is     192.61, Newton-Raphson gradient norm is     535.77
+self consistent iteration gradient norm is     293.94, Newton-Raphson gradient norm is     1161.9
 Choosing self-consistent iteration for lower gradient on iteration 20
-self consistent iteration gradient norm is     185.06, Newton-Raphson gradient norm is      502.6
+self consistent iteration gradient norm is     283.44, Newton-Raphson gradient norm is     1003.3
 Choosing self-consistent iteration for lower gradient on iteration 21
-self consistent iteration gradient norm is     177.94, Newton-Raphson gradient norm is     470.21
+self consistent iteration gradient norm is     273.53, Newton-Raphson gradient norm is     861.39
 Choosing self-consistent iteration for lower gradient on iteration 22
-self consistent iteration gradient norm is     171.22, Newton-Raphson gradient norm is     438.69
+self consistent iteration gradient norm is     264.18, Newton-Raphson gradient norm is     738.82
 Choosing self-consistent iteration for lower gradient on iteration 23
-self consistent iteration gradient norm is     164.87, Newton-Raphson gradient norm is     408.25
+self consistent iteration gradient norm is     255.37, Newton-Raphson gradient norm is     637.12
 Choosing self-consistent iteration for lower gradient on iteration 24
-self consistent iteration gradient norm is     158.86, Newton-Raphson gradient norm is     379.09
+self consistent iteration gradient norm is     247.06, Newton-Raphson gradient norm is     555.06
 Choosing self-consistent iteration for lower gradient on iteration 25
-self consistent iteration gradient norm is     153.16, Newton-Raphson gradient norm is     351.37
+self consistent iteration gradient norm is     239.21, Newton-Raphson gradient norm is     489.86
 Choosing self-consistent iteration for lower gradient on iteration 26
-self consistent iteration gradient norm is     147.77, Newton-Raphson gradient norm is     325.17
+self consistent iteration gradient norm is      231.8, Newton-Raphson gradient norm is     438.34
 Choosing self-consistent iteration for lower gradient on iteration 27
-self consistent iteration gradient norm is     142.66, Newton-Raphson gradient norm is     300.44
+self consistent iteration gradient norm is      224.8, Newton-Raphson gradient norm is     397.52
 Choosing self-consistent iteration for lower gradient on iteration 28
-self consistent iteration gradient norm is     137.81, Newton-Raphson gradient norm is     277.09
+self consistent iteration gradient norm is     218.18, Newton-Raphson gradient norm is     364.85
 Choosing self-consistent iteration for lower gradient on iteration 29
-self consistent iteration gradient norm is      133.2, Newton-Raphson gradient norm is     254.94
+self consistent iteration gradient norm is      211.9, Newton-Raphson gradient norm is     338.24
 Choosing self-consistent iteration for lower gradient on iteration 30
-self consistent iteration gradient norm is     128.82, Newton-Raphson gradient norm is     233.82
+self consistent iteration gradient norm is     205.94, Newton-Raphson gradient norm is     316.06
 Choosing self-consistent iteration for lower gradient on iteration 31
-self consistent iteration gradient norm is     124.66, Newton-Raphson gradient norm is     213.52
+self consistent iteration gradient norm is     200.27, Newton-Raphson gradient norm is     297.13
 Choosing self-consistent iteration for lower gradient on iteration 32
-self consistent iteration gradient norm is      120.7, Newton-Raphson gradient norm is     193.83
+self consistent iteration gradient norm is     194.88, Newton-Raphson gradient norm is     280.62
 Choosing self-consistent iteration for lower gradient on iteration 33
-self consistent iteration gradient norm is     116.94, Newton-Raphson gradient norm is     174.51
+self consistent iteration gradient norm is     189.74, Newton-Raphson gradient norm is     266.01
 Choosing self-consistent iteration for lower gradient on iteration 34
-self consistent iteration gradient norm is     113.35, Newton-Raphson gradient norm is     155.32
+self consistent iteration gradient norm is     184.83, Newton-Raphson gradient norm is     253.09
 Choosing self-consistent iteration for lower gradient on iteration 35
-self consistent iteration gradient norm is     109.94, Newton-Raphson gradient norm is        136
+self consistent iteration gradient norm is     180.14, Newton-Raphson gradient norm is     241.85
 Choosing self-consistent iteration for lower gradient on iteration 36
-self consistent iteration gradient norm is     106.69, Newton-Raphson gradient norm is     116.41
+self consistent iteration gradient norm is     175.64, Newton-Raphson gradient norm is     232.51
 Choosing self-consistent iteration for lower gradient on iteration 37
-self consistent iteration gradient norm is      103.6, Newton-Raphson gradient norm is     96.736
-Newton-Raphson used on iteration 38
-self consistent iteration gradient norm is     36.193, Newton-Raphson gradient norm is     3.8675
-Newton-Raphson used on iteration 39
-self consistent iteration gradient norm is       2.38, Newton-Raphson gradient norm is    0.23289
-Newton-Raphson used on iteration 40
-self consistent iteration gradient norm is    0.19721, Newton-Raphson gradient norm is   0.030137
-Newton-Raphson used on iteration 41
+self consistent iteration gradient norm is     171.33, Newton-Raphson gradient norm is     225.43
+Choosing self-consistent iteration for lower gradient on iteration 38
+self consistent iteration gradient norm is     167.19, Newton-Raphson gradient norm is     220.88
+Choosing self-consistent iteration for lower gradient on iteration 39
+self consistent iteration gradient norm is     163.22, Newton-Raphson gradient norm is     218.81
+Choosing self-consistent iteration for lower gradient on iteration 40
+self consistent iteration gradient norm is      159.4, Newton-Raphson gradient norm is      218.8
+Choosing self-consistent iteration for lower gradient on iteration 41
+self consistent iteration gradient norm is     155.72, Newton-Raphson gradient norm is     220.28
+Choosing self-consistent iteration for lower gradient on iteration 42
+self consistent iteration gradient norm is     152.18, Newton-Raphson gradient norm is     222.99
+Choosing self-consistent iteration for lower gradient on iteration 43
+self consistent iteration gradient norm is     148.78, Newton-Raphson gradient norm is     227.39
+Choosing self-consistent iteration for lower gradient on iteration 44
+self consistent iteration gradient norm is      145.5, Newton-Raphson gradient norm is     234.69
+Choosing self-consistent iteration for lower gradient on iteration 45
+self consistent iteration gradient norm is     142.35, Newton-Raphson gradient norm is      246.2
+Choosing self-consistent iteration for lower gradient on iteration 46
+self consistent iteration gradient norm is     139.31, Newton-Raphson gradient norm is     262.21
+Choosing self-consistent iteration for lower gradient on iteration 47
+self consistent iteration gradient norm is     136.39, Newton-Raphson gradient norm is     283.02
+Choosing self-consistent iteration for lower gradient on iteration 48
+self consistent iteration gradient norm is     133.58, Newton-Raphson gradient norm is     311.56
+Choosing self-consistent iteration for lower gradient on iteration 49
+self consistent iteration gradient norm is     130.87, Newton-Raphson gradient norm is     350.45
+Choosing self-consistent iteration for lower gradient on iteration 50
+self consistent iteration gradient norm is     128.25, Newton-Raphson gradient norm is     395.63
+Choosing self-consistent iteration for lower gradient on iteration 51
+self consistent iteration gradient norm is     125.73, Newton-Raphson gradient norm is     442.99
+Choosing self-consistent iteration for lower gradient on iteration 52
+self consistent iteration gradient norm is     123.29, Newton-Raphson gradient norm is     495.09
+Choosing self-consistent iteration for lower gradient on iteration 53
+self consistent iteration gradient norm is     120.93, Newton-Raphson gradient norm is      551.6
+Choosing self-consistent iteration for lower gradient on iteration 54
+self consistent iteration gradient norm is     118.63, Newton-Raphson gradient norm is     603.33
+Choosing self-consistent iteration for lower gradient on iteration 55
+self consistent iteration gradient norm is     116.38, Newton-Raphson gradient norm is     638.88
+Choosing self-consistent iteration for lower gradient on iteration 56
+self consistent iteration gradient norm is     114.18, Newton-Raphson gradient norm is     651.25
+Choosing self-consistent iteration for lower gradient on iteration 57
+self consistent iteration gradient norm is     112.01, Newton-Raphson gradient norm is     639.13
+Choosing self-consistent iteration for lower gradient on iteration 58
+self consistent iteration gradient norm is     109.87, Newton-Raphson gradient norm is     606.11
+Choosing self-consistent iteration for lower gradient on iteration 59
+self consistent iteration gradient norm is     107.75, Newton-Raphson gradient norm is      559.9
+Choosing self-consistent iteration for lower gradient on iteration 60
+self consistent iteration gradient norm is     105.64, Newton-Raphson gradient norm is     510.34
+Choosing self-consistent iteration for lower gradient on iteration 61
+self consistent iteration gradient norm is     103.54, Newton-Raphson gradient norm is     465.09
+Choosing self-consistent iteration for lower gradient on iteration 62
+self consistent iteration gradient norm is     101.44, Newton-Raphson gradient norm is     425.63
+Choosing self-consistent iteration for lower gradient on iteration 63
+self consistent iteration gradient norm is     99.351, Newton-Raphson gradient norm is     388.56
+Choosing self-consistent iteration for lower gradient on iteration 64
+self consistent iteration gradient norm is     97.268, Newton-Raphson gradient norm is     350.68
+Choosing self-consistent iteration for lower gradient on iteration 65
+self consistent iteration gradient norm is     95.193, Newton-Raphson gradient norm is      312.3
+Choosing self-consistent iteration for lower gradient on iteration 66
+self consistent iteration gradient norm is     93.128, Newton-Raphson gradient norm is      276.1
+Choosing self-consistent iteration for lower gradient on iteration 67
+self consistent iteration gradient norm is     91.075, Newton-Raphson gradient norm is     244.21
+Choosing self-consistent iteration for lower gradient on iteration 68
+self consistent iteration gradient norm is     89.035, Newton-Raphson gradient norm is     216.88
+Choosing self-consistent iteration for lower gradient on iteration 69
+self consistent iteration gradient norm is     87.012, Newton-Raphson gradient norm is     193.18
+Choosing self-consistent iteration for lower gradient on iteration 70
+self consistent iteration gradient norm is     85.006, Newton-Raphson gradient norm is     172.11
+Choosing self-consistent iteration for lower gradient on iteration 71
+self consistent iteration gradient norm is     83.021, Newton-Raphson gradient norm is     153.05
+Choosing self-consistent iteration for lower gradient on iteration 72
+self consistent iteration gradient norm is     81.059, Newton-Raphson gradient norm is     135.83
+Choosing self-consistent iteration for lower gradient on iteration 73
+self consistent iteration gradient norm is     79.122, Newton-Raphson gradient norm is     120.47
+Choosing self-consistent iteration for lower gradient on iteration 74
+self consistent iteration gradient norm is     77.213, Newton-Raphson gradient norm is     106.99
+Choosing self-consistent iteration for lower gradient on iteration 75
+self consistent iteration gradient norm is     75.334, Newton-Raphson gradient norm is     95.299
+Choosing self-consistent iteration for lower gradient on iteration 76
+self consistent iteration gradient norm is     73.487, Newton-Raphson gradient norm is     85.229
+Choosing self-consistent iteration for lower gradient on iteration 77
+self consistent iteration gradient norm is     71.674, Newton-Raphson gradient norm is     76.558
+Choosing self-consistent iteration for lower gradient on iteration 78
+self consistent iteration gradient norm is     69.897, Newton-Raphson gradient norm is     69.066
+Newton-Raphson used on iteration 79
+self consistent iteration gradient norm is     39.394, Newton-Raphson gradient norm is     4.8723
+Newton-Raphson used on iteration 80
+self consistent iteration gradient norm is     1.8742, Newton-Raphson gradient norm is   0.011014
+Newton-Raphson used on iteration 81
+self consistent iteration gradient norm is  0.0054367, Newton-Raphson gradient norm is 8.7379e-08
+Newton-Raphson used on iteration 82
+self consistent iteration gradient norm is 3.5302e-08, Newton-Raphson gradient norm is 7.6282e-18
+Newton-Raphson used on iteration 83
+self consistent iteration gradient norm is 2.7509e-18, Newton-Raphson gradient norm is 6.2239e-26
+Newton-Raphson used on iteration 84
+self consistent iteration gradient norm is 5.1296e-28, Newton-Raphson gradient norm is 1.8466e-26
+Choosing self-consistent iteration for lower gradient on iteration 85
+Converged to tolerance of 2.164715e-16 in 86 iterations.
+Of 86 iterations, 6 were Newton-Raphson iterations and 80 were self-consistent iterations
+Final dimensionless free energies
+f_k = 
 #Overlap matrix
-0.8550 0.1446 0.0004 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
-0.1446 0.6879 0.1648 0.0027 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
-0.0004 0.1648 0.6420 0.1921 0.0008 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
-0.0000 0.0027 0.1921 0.6344 0.1704 0.0005 0.0000 0.0000 0.0000 0.0000 0.0000
-0.0000 0.0000 0.0008 0.1704 0.7846 0.0441 0.0001 0.0000 0.0000 0.0000 0.0000
-0.0000 0.0000 0.0000 0.0005 0.0441 0.8130 0.1287 0.0137 0.0000 0.0000 0.0000
-0.0000 0.0000 0.0000 0.0000 0.0001 0.1287 0.7317 0.1382 0.0000 0.0012 0.0000
-0.0000 0.0000 0.0000 0.0000 0.0000 0.0137 0.1382 0.7488 0.0013 0.0979 0.0001
-0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0013 0.9982 0.0004 0.0000
-0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0012 0.0979 0.0004 0.8041 0.0964
-0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0001 0.0000 0.0964 0.9035
+0.8466 0.1515 0.0020 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
+0.1515 0.6773 0.1684 0.0029 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
+0.0020 0.1684 0.6400 0.1893 0.0004 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000
+0.0000 0.0029 0.1893 0.6679 0.1398 0.0001 0.0000 0.0000 0.0000 0.0000 0.0000
+0.0000 0.0000 0.0004 0.1398 0.8175 0.0422 0.0001 0.0000 0.0000 0.0000 0.0000
+0.0000 0.0000 0.0000 0.0001 0.0422 0.8290 0.1183 0.0103 0.0001 0.0001 0.0000
+0.0000 0.0000 0.0000 0.0000 0.0001 0.1183 0.7372 0.1361 0.0022 0.0062 0.0000
+0.0000 0.0000 0.0000 0.0000 0.0000 0.0103 0.1361 0.7398 0.0298 0.0839 0.0001
+0.0000 0.0000 0.0000 0.0000 0.0000 0.0001 0.0022 0.0298 0.9482 0.0197 0.0001
+0.0000 0.0000 0.0000 0.0000 0.0000 0.0001 0.0062 0.0839 0.0197 0.8087 0.0815
+0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0001 0.0001 0.0815 0.9183
 #DG from neighbouring lambda in kcal/mol
-0.0000 0.1000 -9.3934 0.3526
-0.1000 0.2000 -8.9371 0.3170
-0.2000 0.3000 -7.5120 0.2812
-0.3000 0.4000 -7.0720 0.3116
-0.4000 0.5000 -7.3686 0.7194
-0.5000 0.6000 -8.6303 0.3590
-0.6000 0.7000 -6.0973 0.3412
-0.7000 0.8000 -8.5632 3.7906
-0.8000 0.9000 2.8529 3.8079
-0.9000 1.0000 3.1215 0.4607
+0.0000 0.1000 -9.7842 0.3073
+0.1000 0.2000 -8.3317 0.2809
+0.2000 0.3000 -6.9779 0.2584
+0.3000 0.4000 -7.1174 0.3275
+0.4000 0.5000 -8.4124 0.6719
+0.5000 0.6000 -9.7370 0.3484
+0.6000 0.7000 -7.2596 0.3072
+0.7000 0.8000 -6.1889 0.6264
+0.8000 0.9000 0.9743 0.6634
+0.9000 1.0000 3.8857 0.4628
 #PMF from MBAR in kcal/mol
 0.0000 0.0000 0.0000
-0.1000 -9.3934 0.3526
-0.2000 -18.3305 0.5243
-0.3000 -25.8425 0.6329
-0.4000 -32.9144 0.7397
-0.5000 -40.2830 1.0547
-0.6000 -48.9133 1.1364
-0.7000 -55.0105 1.1944
-0.8000 -63.5737 3.9803
-0.9000 -60.7208 1.2953
-1.0000 -57.5993 1.3930
+0.1000 -9.7842 0.3073
+0.2000 -18.1159 0.4605
+0.3000 -25.0938 0.5631
+0.4000 -32.2112 0.6824
+0.5000 -40.6236 0.9790
+0.6000 -50.3606 1.0588
+0.7000 -57.6202 1.1114
+0.8000 -63.8091 1.2851
+0.9000 -62.8348 1.1924
+1.0000 -58.9492 1.2949
 #TI average gradients and standard deviation in kcal/mol
-0.0000 -466.0043 18.6613
-0.1000 -45.3293 16.0801
-0.2000 -40.7720 16.0095
-0.3000 -36.3811 15.1583
-0.4000 -32.1954 14.7753
-0.5000 -28.6769 14.1668
-0.6000 -433.4493 17.6053
-0.7000 -19.6247 13.5794
-0.8000 -10.8261 14.1605
-0.9000 11.2277 16.2583
-1.0000 78.9518 23.4670
+0.0000 -466.1320 18.6445
+0.1000 -45.4269 16.2555
+0.2000 -40.7313 15.7518
+0.3000 -36.2630 15.2910
+0.4000 -32.2558 14.8013
+0.5000 -28.9040 14.0699
+0.6000 -433.6962 17.4917
+0.7000 -19.8173 13.6340
+0.8000 -10.8090 14.1568
+0.9000 11.3575 16.2762
+1.0000 78.8168 23.3598
 #PMF from TI in kcal/mol
 0.0000 0.0000
-0.1000 -25.5667
-0.2000 -29.8717
-0.3000 -33.7294
-0.4000 -37.1582
-0.5000 -40.2018
-0.6000 -63.3081
-0.7000 -85.9618
-0.8000 -87.4844
-0.9000 -87.4643
-1.0000 -82.9553
+0.1000 -25.5779
+0.2000 -29.8859
+0.3000 -33.7356
+0.4000 -37.1615
+0.5000 -40.2195
+0.6000 -63.3495
+0.7000 -86.0252
+0.8000 -87.5565
+0.9000 -87.5291
+1.0000 -83.0204
 #MBAR free energy difference in kcal/mol: 
--57.599336, 1.393023  #WARNING SUBSAMPLING ENERGIES RESULTED IN LESS THAN 50 SAMPLES, CONSIDER RERUN WITHOUT SUBSAMPLE OPTION
+-58.949151, 1.294923  #WARNING SUBSAMPLING ENERGIES RESULTED IN LESS THAN 50 SAMPLES, CONSIDER RERUN WITHOUT SUBSAMPLE OPTION
 #TI free energy difference in kcal/mol: 
--82.955338  
+-83.020361  
 Starting /home/nichrun/miniconda3/envs/biosimspace-dev/bin/analyse_freenrg: number of threads equals 20

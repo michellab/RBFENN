@@ -1,0 +1,5 @@
+index,CID,SMILES
+18525,JOH-UNI-e398da21-2,CSC1(C(=O)Nc2cncc3ccccc23)CN(S(C)(=O)=O)Cc2ccc(Cl)cc21
+17439,ALP-POS-5290f14d-1,COC1(C(=O)Nc2cncc3ccccc23)CN(S(C)(=O)=O)Cc2ccc(Cl)cc21
+17519,EDJ-MED-923a35c2-5,COC1(C(=O)Nc2cncc3ccc(F)cc23)CN(S(C)(=O)=O)Cc2ccc(Cl)cc21
+17747,EDJ-MED-cf877e1d-2,COC1(C(=O)Nc2cncc3ccccc23)CN(S(=O)(=O)N(C)C)Cc2ccc(Cl)cc21

@@ -1,0 +1,10 @@
+index,CID,SMILES
+19046,MAT-POS-5cd9ea36-5,N#CC1(CS(=O)(=O)N2Cc3ccc(Cl)cc3C(C(=O)Nc3cncc4ccccc34)C2)CCCC1
+17878,MAT-POS-dc2604c4-3,N#CC1(CS(=O)(=O)N2Cc3ccc(Cl)cc3C(C(=O)Nc3cncc4ccccc34)C2)CNC1
+18847,ALP-POS-6f6ae286-4,N#CC1(CS(=O)(=O)N2Cc3ccc(Cl)cc3C(C(=O)Nc3cncc4cc(F)ccc34)C2)CCC1
+18936,EDJ-MED-be9e6f63-2,N#CC1(CS(=O)(=O)N2Cc3ccc(Cl)cc3C(C(=O)Nc3cncc4cc(F)ccc34)C2)CC1
+18938,EDJ-MED-be9e6f63-4,N#CC1(CS(=O)(=O)N2Cc3ccc(Cl)cc3C(C(=O)Nc3cncc4cc(Cl)ccc34)C2)CC1
+19047,MAT-POS-5cd9ea36-6,N#CC1(CS(=O)(=O)N2Cc3ccc(Cl)cc3C(C(=O)Nc3cncc4ccccc34)C2)CCOCC1
+19048,MAT-POS-5cd9ea36-7,N#CC1(CS(=O)(=O)N2Cc3ccc(Cl)cc3C(C(=O)Nc3cncc4ccccc34)C2)CCS(=O)(=O)CC1
+19049,MAT-POS-5cd9ea36-8,N#CCC1(CS(=O)(=O)N2Cc3ccc(Cl)cc3C(C(=O)Nc3cncc4ccccc34)C2)CC1
+20098,MAT-POS-b4d6b7fc-9,N#CC1(CS(=O)(=O)N2Cc3ccc(Cl)cc3C(C(=O)Nc3cncc4ccc(F)cc34)C2)CC1

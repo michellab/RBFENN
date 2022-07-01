@@ -1,0 +1,11 @@
+Cluster number = 0
+N = 60
+morgan radius = 4
+nBits = 1024
+ConsiderAtoms = Features
+useBondTypes = True
+ButinaClusterCutoff = 0.2
+---------------------------
+Total size of cluster N = 60
+removed duplicates N = 55
+removed sterochem N = 33

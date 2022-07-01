@@ -1,0 +1,15 @@
+index,CID,SMILES
+19970,EDJ-MED-e69ed63d-11,CC(C)(C)NC(=O)CN1CC(C(=O)Nc2cncc3cc(F)ccc23)c2cc(Cl)ccc2C1=O
+19910,EDJ-MED-d165ed91-4,CC(C)(C)NC(=O)CN1CC(C(=O)Nc2cncc3cc(S(C)(=O)=O)ccc23)c2cc(Cl)ccc2C1=O
+19960,EDJ-MED-e69ed63d-1,CC(C)NC(=O)CN1CC(C(=O)Nc2cncc3cc(F)ccc23)c2cc(Cl)ccc2C1=O
+19962,EDJ-MED-e69ed63d-3,O=C(CN1CC(C(=O)Nc2cncc3cc(F)ccc23)c2cc(Cl)ccc2C1=O)NC1CC1
+19965,EDJ-MED-e69ed63d-6,O=C(CN1CC(C(=O)Nc2cncc3cc(F)ccc23)c2cc(Cl)ccc2C1=O)NC1COC1
+19966,EDJ-MED-e69ed63d-7,CCNC(=O)CN1CC(C(=O)Nc2cncc3cc(F)ccc23)c2cc(Cl)ccc2C1=O
+19968,EDJ-MED-e69ed63d-9,O=C(CN1CC(C(=O)Nc2cncc3cc(F)ccc23)c2cc(Cl)ccc2C1=O)NC1CCC1
+19971,EDJ-MED-e69ed63d-12,CC(C)(C)NC(=O)CN1CC(C(=O)Nc2cncc3cc(S(C)(=O)=O)ccc23)c2cc(Cl)ccc2C1=O
+19972,EDJ-MED-e69ed63d-13,CCCNC(=O)CN1CC(C(=O)Nc2cncc3cc(F)ccc23)c2cc(Cl)ccc2C1=O
+19974,EDJ-MED-e69ed63d-15,O=C(CN1CC(C(=O)Nc2cncc3cc(F)ccc23)c2cc(Cl)ccc2C1=O)NCC1CC1
+19976,EDJ-MED-e69ed63d-17,O=C(CN1CC(C(=O)Nc2cncc3cc(F)ccc23)c2cc(Cl)ccc2C1=O)NCC(F)(F)F
+20151,EDG-MED-e300b289-1,O=C(CN1CC(C(=O)Nc2cncc3cc(Cl)ccc23)c2cc(Cl)ccc2C1=O)NCCO
+20152,EDG-MED-e300b289-2,CC(C)(O)CNC(=O)CN1CC(C(=O)Nc2cncc3cc(Cl)ccc23)c2cc(Cl)ccc2C1=O
+20312,EDJ-MED-c99b2211-4,CC(C)(C)NC(=O)CN1CC(C(=O)Nc2cncc3cc(S(C)(=O)=O)ccc23)c2cc(Cl)ccc2C1=O

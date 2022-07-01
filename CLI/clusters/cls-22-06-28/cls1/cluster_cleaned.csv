@@ -1,0 +1,8 @@
+index,CID,SMILES
+16058,EDG-MED-0e5afe9d-3,COC1(C(=O)Nc2cncc3ccccc23)CCOc2ccc(Cl)cc21
+17162,RAL-THA-58fba2bc-4,O=C(Nc1cncc2ccccc12)C1(OCCO)CCOc2ccc(Cl)cc21
+17508,MIC-UNK-6e9f8a43-2,CSC1(C(=O)Nc2cncc3ccccc23)CCOc2ccc(Cl)cc21
+17835,MIC-UNK-ea4eb352-4,COC1(C(=O)Nc2cncc3ccccc23)CCSc2ccc(Cl)cc21
+17910,MIC-UNK-ddc6ad53-1,O=C(Nc1cncc2ccccc12)C1(OCC(F)(F)F)CCOc2ccc(Cl)cc21
+17911,MIC-UNK-ddc6ad53-2,O=C(Nc1cncc2ccccc12)C1(OCCOC(F)(F)F)CCOc2ccc(Cl)cc21
+17912,MIC-UNK-ddc6ad53-3,O=C(Nc1cncc2ccccc12)C1(OCCC(F)(F)F)CCOc2ccc(Cl)cc21

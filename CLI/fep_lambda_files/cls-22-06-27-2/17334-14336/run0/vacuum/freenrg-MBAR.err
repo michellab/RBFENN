@@ -1,0 +1,12 @@
+/home/nichrun/miniconda3/envs/biosimspace-dev/lib/python3.9/site-packages/numpy/core/getlimits.py:499: UserWarning: The value of the smallest subnormal for <class 'numpy.float64'> type is zero.
+  setattr(self, word, getattr(machar, word).flat[0])
+/home/nichrun/miniconda3/envs/biosimspace-dev/lib/python3.9/site-packages/numpy/core/getlimits.py:89: UserWarning: The value of the smallest subnormal for <class 'numpy.float64'> type is zero.
+  return self._float_to_str(self.smallest_subnormal)
+/home/nichrun/miniconda3/envs/biosimspace-dev/lib/python3.9/site-packages/numpy/core/getlimits.py:499: UserWarning: The value of the smallest subnormal for <class 'numpy.float32'> type is zero.
+  setattr(self, word, getattr(machar, word).flat[0])
+/home/nichrun/miniconda3/envs/biosimspace-dev/lib/python3.9/site-packages/numpy/core/getlimits.py:89: UserWarning: The value of the smallest subnormal for <class 'numpy.float32'> type is zero.
+  return self._float_to_str(self.smallest_subnormal)
+/home/nichrun/miniconda3/envs/biosimspace-dev/lib/python3.9/site-packages/Sire/Tools/FreeEnergyAnalysis.py:271: UserWarning: You have reduced your data to less than 50 samples, the results from these might not be trustworthy. If you don't want to add more samples consider rerunning the analysis using the percentage option.
+  warnings.warn("You have reduced your data to less than 50 samples, the results from these might not "
+/home/nichrun/miniconda3/envs/biosimspace-dev/share/Sire/scripts/analyse_freenrg.py:641: UserWarning: Off diagonal elements of the overlap matrix are smaller than 0.03! Your free energy estimate is not reliable!
+  warnings.warn(
