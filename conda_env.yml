@@ -1,4 +1,4 @@
-name: data_driven_fep_rel
+name: RBFENN-env
 channels:
   - mordred-descriptor
   - omnia
