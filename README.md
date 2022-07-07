@@ -2,7 +2,7 @@
 
 ![alt text](https://github.com/michellab/data_driven_fep_reliabilities/blob/master/toc_figure.png)
 
-Source code to reproduce [arxiv link](https://github.com/MobleyLab/Lomap). 
+Source code to reproduce [the work's preprint](https://chemrxiv.org/engage/chemrxiv/article-details/62c5d5d93be5f1094d0eba6a). 
 
 ----------------------------------------------------------------
 
